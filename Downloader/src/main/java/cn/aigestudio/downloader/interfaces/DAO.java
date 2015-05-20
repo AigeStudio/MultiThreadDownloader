@@ -7,6 +7,7 @@ import cn.aigestudio.downloader.entities.DLInfo;
 
 /**
  * DAO抽象类
+ * Abstract class of DAO.
  *
  * @author AigeStudio 2015-05-16
  */

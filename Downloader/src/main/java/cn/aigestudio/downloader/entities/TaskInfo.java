@@ -5,6 +5,7 @@ import java.io.Serializable;
 
 /**
  * 任务实体类
+ * Task entity.
  *
  * @author AigeStudio 2015-05-16
  */

@@ -5,6 +5,7 @@ import java.io.Serializable;
 
 /**
  * 下载实体类
+ * Download entity.
  *
  * @author AigeStudio 2015-05-16
  */

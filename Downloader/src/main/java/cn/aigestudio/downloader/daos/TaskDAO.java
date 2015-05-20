@@ -13,6 +13,7 @@ import cn.aigestudio.downloader.interfaces.DAO;
 
 /**
  * 下载任务的DAO实现
+ * DAO for download task.
  *
  * @author AigeStudio 2015-05-09
  */

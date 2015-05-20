@@ -5,6 +5,7 @@ import java.io.Serializable;
 
 /**
  * 线程实体类
+ * Thread entity.
  *
  * @author AigeStudio 2015-05-16
  */

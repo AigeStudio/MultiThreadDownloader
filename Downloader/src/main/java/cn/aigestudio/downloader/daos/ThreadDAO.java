@@ -15,6 +15,7 @@ import cn.aigestudio.downloader.interfaces.DAO;
 
 /**
  * 线程的DAO实现
+ * DAO for thread.
  *
  * @author AigeStudio 2015-05-16
  */

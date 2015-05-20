@@ -12,17 +12,17 @@ import cn.aigestudio.downloader.entities.ThreadInfo;
 /**
  * 数据库管理器
  * 封装各种业务数据操作
+ * DataBase manager
  *
  * @author AigeStudio 2015-05-09
  */
 public final class DBManager {
-    private static DBManager sManager = null;// 数据库管理静态引用
+    private static DBManager sManager = null;
 
-    private TaskDAO daoTask;// 下载任务数据库操作对象
-    private ThreadDAO daoThread;// 线程任务数据库操作对象
+    private TaskDAO daoTask;
+    private ThreadDAO daoThread;
 
     private DBManager(Context context) {
-        // 初始化对象
         daoTask = new TaskDAO(context);
         daoThread = new ThreadDAO(context);
     }

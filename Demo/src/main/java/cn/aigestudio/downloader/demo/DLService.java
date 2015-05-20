@@ -17,6 +17,7 @@ import cn.aigestudio.downloader.utils.LogUtil;
 
 /**
  * 执行下载的Service
+ * Service for download
  *
  * @author AigeStudio 2015-05-18
  */
