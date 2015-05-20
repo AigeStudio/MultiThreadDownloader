@@ -167,6 +167,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:textSize="8sp"
                 android:text="@string/btn_dl_notify1" />
 
             <Button
@@ -174,6 +175,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:textSize="8sp"
                 android:text="@string/btn_dl_notify2" />
 
             <Button
@@ -181,6 +183,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:textSize="8sp"
                 android:text="@string/btn_dl_notify3" />
 
             <Button
@@ -188,6 +191,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:textSize="8sp"
                 android:text="@string/btn_dl_notify4" />
 
             <Button
@@ -195,6 +199,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:textSize="8sp"
                 android:text="@string/btn_dl_notify5" />
 
             <Button
@@ -202,6 +207,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:textSize="8sp"
                 android:text="@string/btn_dl_notify6" />
         </LinearLayout>
     </LinearLayout>
