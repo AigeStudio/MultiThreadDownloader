@@ -43,7 +43,7 @@ import cn.aigestudio.downloader.utils.NetUtil;
  * @author AigeStudio 2015-05-09
  */
 public final class DLManager {
-    private static final int THREAD_POOL_SIZE = 8;
+    private static final int THREAD_POOL_SIZE = 32;
 
     private static DLManager sManager;
     private static Hashtable<String, DLTask> sTaskDLing;
@@ -139,7 +139,7 @@ public final class DLManager {
     }
 
     private class DLTask implements Runnable, IDLThreadListener {
-        private static final int LENGTH_PER_THREAD = 5242880;
+        private static final int LENGTH_PER_THREAD = 2097152;
 
         private TaskInfo info;
         private DLTaskListener mListener;
