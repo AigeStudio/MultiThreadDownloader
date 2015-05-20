@@ -213,7 +213,12 @@ public final class DLManager {
                                 info.length = fileLength;
                                 sDBManager.insertTaskInfo(info);
 
-                                int threadSize = fileLength / LENGTH_PER_THREAD;
+                                int threadSize;
+                                if (fileLength <= LENGTH_PER_THREAD) {
+                                    threadSize = 3;
+                                } else {
+                                    threadSize = fileLength / LENGTH_PER_THREAD;
+                                }
                                 LogUtil.i("We will start " + threadSize + " threads.");
                                 int remainder = fileLength % LENGTH_PER_THREAD;
                                 LogUtil.i("The last thread will download " + remainder + " more bytes.");
