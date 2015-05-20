@@ -8,8 +8,10 @@
 多线程断点续传暂未发现问题
 ##预览图
 **在普通界面中下载**
+
 ![](https://github.com/AigeStudio/MultiThreadDownloader/blob/master/preview1.gif)
 **在状态栏中下载**
+
 ![](https://github.com/AigeStudio/MultiThreadDownloader/blob/master/preview2.gif)
 ##功能简介
 * 多线程下载
@@ -75,8 +77,10 @@ Easy and useful downloader for Android
 Multi-thread http download
 ##Preview
 **Download in activity**
+
 ![](https://github.com/AigeStudio/MultiThreadDownloader/blob/master/preview1.gif)
 **Download in statusbar**
+
 ![](https://github.com/AigeStudio/MultiThreadDownloader/blob/master/preview2.gif)
 ##Function
 * Multi-thread
