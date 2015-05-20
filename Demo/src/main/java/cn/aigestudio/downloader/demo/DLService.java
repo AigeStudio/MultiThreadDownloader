@@ -44,7 +44,6 @@ public class DLService extends Service {
             @Override
             public void onFinish(File file) {
                 LogUtil.i("onFinish");
-                installApk(file);
                 nm.cancel(id);
             }
         });
@@ -54,13 +53,5 @@ public class DLService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         return null;
-    }
-
-    private void installApk(File file) {
-        LogUtil.i("installApk");
-        Intent intent = new Intent(Intent.ACTION_VIEW);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        intent.setDataAndType(Uri.fromFile(file), "application/vnd.android.package-archive");
-        startActivity(intent);
     }
 }
