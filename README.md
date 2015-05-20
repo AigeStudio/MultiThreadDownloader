@@ -39,6 +39,7 @@ compile project(':Downloader')
 ```
 ##如何使用
 一旦将Downloader集成到项目后你便可以调用DLManager中的dlStart、dlStop和dlCancel方法来开始、停止和取消一个下载任务：
+
 **开始一个下载任务**
 ```Java
 DLManager.getInstance(context).dlStart(url, dirPath, null);
@@ -109,6 +110,7 @@ compile project(':Downloader')
 ```
 ##Usage
 Once you add DatePicker to your project you can use method dlStart dlStop and dlCancel provide by DLManager to start stop and cancel a download task:
+
 **Start a download task**
 ```Java
 DLManager.getInstance(context).dlStart(url, dirPath, null);
