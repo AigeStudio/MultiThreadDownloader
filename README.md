@@ -10,6 +10,7 @@
 **在普通界面中下载**
 
 ![](https://github.com/AigeStudio/MultiThreadDownloader/blob/master/preview1.gif)
+
 **在状态栏中下载**
 
 ![](https://github.com/AigeStudio/MultiThreadDownloader/blob/master/preview2.gif)
@@ -79,6 +80,7 @@ Multi-thread http download
 **Download in activity**
 
 ![](https://github.com/AigeStudio/MultiThreadDownloader/blob/master/preview1.gif)
+
 **Download in statusbar**
 
 ![](https://github.com/AigeStudio/MultiThreadDownloader/blob/master/preview2.gif)
