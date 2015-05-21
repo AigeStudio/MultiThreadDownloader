@@ -76,6 +76,8 @@ DLManager.getInstance(context).dlCancel(url);
 **这里开始是英文文档**
 # Downloader for Android multi-thread http download
 Easy and useful downloader for Android
+##Android API Needs
+**API 1**
 ##Version
 ###1.0.0 Release
 Multi-thread http download
