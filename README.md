@@ -3,6 +3,8 @@
 **Here is begin of CN document.**
 # Andorid多线程断点续传下载器
 逻辑比较简单但实用的Android多线程断点续传下载器
+##Android API 版本要求
+**API 1**
 ##版本迭代
 ###1.0.0 Release
 多线程断点续传暂未发现问题
