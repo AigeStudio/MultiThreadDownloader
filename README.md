@@ -1,3 +1,5 @@
+[![Android Arsenal](https://img.shields.io/badge/Android%20Arsenal-MultiThreadDownloader-brightgreen.svg?style=flat)](http://android-arsenal.com/details/1/1865)
+
 *You can jump to EN README after CN if you don't read chinese.*
 ***
 **Here is begin of CN document.**
