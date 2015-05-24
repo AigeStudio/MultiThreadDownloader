@@ -115,7 +115,7 @@ Add something like below in your build.gradle file of project:
 compile project(':Downloader')
 ```
 ##Usage
-Once you add DatePicker to your project you can use method dlStart dlStop and dlCancel provide by DLManager to start stop and cancel a download task:
+Once you add Downloader to your project you can use method dlStart dlStop and dlCancel provide by DLManager to start stop and cancel a download task:
 
 **Start a download task**
 ```Java
@@ -143,7 +143,7 @@ Just use dlStop method and transfer url to stop a download task.
 ```Java
 DLManager.getInstance(context).dlCancel(url);
 ```
-Similarly, use dlCancelmethod and transfer url to cancel a download task. The difference between dlStop and dlCancel is whether the data in database would be deleted or not, for example, the state of download like local file and data in database will be save when you use dlStop stop a download task, if you use dlCancel cancel a download task, anything related to download task would be deleted. note:**The unique identification of a download task is url**.
+Similarly, use dlCancel method and transfer url to cancel a download task. The difference between dlStop and dlCancel is whether the data in database would be deleted or not, for example, the state of download like local file and data in database will be save when you use dlStop stop a download task, if you use dlCancel cancel a download task, anything related to download task would be deleted. note:**The unique identification of a download task is url**.
 
 More for usage please see Demo.
 
