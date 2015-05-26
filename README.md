@@ -12,6 +12,7 @@
 ##版本迭代
 ###1.0.0 Release
 * 多线程断点续传暂未发现问题
+
 ###1.2.1 Release
 * 修复下载线程分配问题
 * 支持域名地址重定向
@@ -91,6 +92,7 @@ Easy and useful downloader for Android
 ##Version
 ###1.0.0 Release
 * Multi-thread http download
+
 ###1.2.1 Release
 * Bugfix:download thread dispath
 * Support url redirection
