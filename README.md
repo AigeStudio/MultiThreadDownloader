@@ -1,7 +1,9 @@
 [![Android Arsenal](https://img.shields.io/badge/Android%20Arsenal-MultiThreadDownloader-brightgreen.svg?style=flat)](http://android-arsenal.com/details/1/1865)
 
 *You can jump to EN README after CN if you don't read chinese.*
+
 ***
+
 **Here is begin of CN document.**
 # Andorid多线程断点续传下载器
 逻辑比较简单但实用的Android多线程断点续传下载器
@@ -9,7 +11,11 @@
 **API 1**
 ##版本迭代
 ###1.0.0 Release
-多线程断点续传暂未发现问题
+* 多线程断点续传暂未发现问题
+###1.2.1 Release
+* 修复下载线程分配问题
+* 支持域名地址重定向
+* 如果服务器不支持断点下载则启用单线程下载且不存储于数据库
 ##预览图
 **在普通界面中下载**
 
@@ -75,14 +81,20 @@ DLManager.getInstance(context).dlCancel(url);
 更多相关的使用请参考Demo
 
 ***
+
 **这里开始是英文文档**
+
 # Downloader for Android multi-thread http download
 Easy and useful downloader for Android
 ##Android API Needs
 **API 1**
 ##Version
 ###1.0.0 Release
-Multi-thread http download
+* Multi-thread http download
+###1.2.1 Release
+* Bugfix:download thread dispath
+* Support url redirection
+* DLManager will download with single thread if server does not support break-point, and it will not insert to database
 ##Preview
 **Download in activity**
 
