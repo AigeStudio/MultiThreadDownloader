@@ -16,6 +16,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import cn.aigestudio.downloader.cons.HttpConnPars;
 import cn.aigestudio.downloader.cons.PublicCons;
 import cn.aigestudio.downloader.entities.TaskInfo;
 import cn.aigestudio.downloader.entities.ThreadInfo;
@@ -27,20 +28,27 @@ import cn.aigestudio.downloader.utils.NetUtil;
 
 /**
  * 下载管理器
- * 执行具体的下载操作
- * 开始一个下载任务只需调用{@link #dlStart}方法即可
- * 停止某个下载任务需要调用{@link #dlStop}方法 停止下载任务仅仅会将对应下载任务移除下载队列而不删除相应数据 下次启动相同任务时会自动根据上一次停止时保存的数据重新开始下载
- * 取消某个下载任务需要调用{@link #dlCancel}方法 取消下载任务会删除掉相应的本地数据库数据但文件不会被删除
- * 相同url的下载任务视为相同任务
  * Download manager
- * Use {@link #dlStart} for a new download task.
- * Use {@link #dlStop} to stop a download task base on url.
- * Use {@link #dlCancel} to cancel a download task base on url.
- * By the way, the difference between {@link #dlStop} and {@link #dlCancel} is whether the data in database would be deleted or not,
- * for example, the state of download like local file and data in database will be save when you use {@link #dlStop} stop a download task,
- * if you use {@link #dlCancel} cancel a download task, anything related to download task would be deleted.
+ * 执行具体的下载操作
  *
  * @author AigeStudio 2015-05-09
+ *         开始一个下载任务只需调用{@link #dlStart}方法即可
+ *         停止某个下载任务需要调用{@link #dlStop}方法 停止下载任务仅仅会将对应下载任务移除下载队列而不删除相应数据 下次启动相同任务时会自动根据上一次停止时保存的数据重新开始下载
+ *         取消某个下载任务需要调用{@link #dlCancel}方法 取消下载任务会删除掉相应的本地数据库数据但文件不会被删除
+ *         相同url的下载任务视为相同任务
+ *         Use {@link #dlStart} for a new download task.
+ *         Use {@link #dlStop} to stop a download task base on url.
+ *         Use {@link #dlCancel} to cancel a download task base on url.
+ *         By the way, the difference between {@link #dlStop} and {@link #dlCancel} is whether the data in database would be deleted or not,
+ *         for example, the state of download like local file and data in database will be save when you use {@link #dlStop} stop a download task,
+ *         if you use {@link #dlCancel} cancel a download task, anything related to download task would be deleted.
+ * @author AigeStudio 2015-05-26
+ *         对不支持断点下载的文件直接使用单线程下载 该操作将不会插入数据库
+ *         对转向地址进行解析
+ *         更改下载线程分配逻辑
+ *         DLManager will download with single thread if server does not support break-point, and it will not insert to database
+ *         Support url redirection.
+ *         Change download thread size dispath.
  */
 public final class DLManager {
     private static final int THREAD_POOL_SIZE = 32;
@@ -59,13 +67,6 @@ public final class DLManager {
         sTaskDLing = new Hashtable<>();
     }
 
-    /**
-     * 获取下载管理器单例对象
-     * Singleton of DLManager.
-     *
-     * @param context ...
-     * @return 下载管理器单例对象
-     */
     public static DLManager getInstance(Context context) {
         if (null == sManager) {
             sManager = new DLManager(context);
@@ -73,39 +74,11 @@ public final class DLManager {
         return sManager;
     }
 
-    /**
-     * 开始一个下载任务
-     * Start a download task.
-     *
-     * @param url      下载地址 url of remote file
-     * @param dirPath  下载文件保存目录 local directory for file save
-     * @param listener 下载监听对象 listener of download
-     */
     public void dlStart(String url, String dirPath, DLTaskListener listener) {
-        if (sTaskDLing.containsKey(url)) {
-            Toast.makeText(context, "文件正在下载", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        TaskInfo info = sDBManager.queryTaskInfoByUrl(url);
-
-        String fileName = FileUtil.getFileNameFromUrl(url);
-        File file = new File(dirPath, fileName);
-
-        if (null == info || !file.exists()) {
-            LogUtil.i("New Task!");
-            info = new TaskInfo(FileUtil.createFile(dirPath, fileName), url, 0, 0);
-        }
-        DLTask task = new DLTask(info, listener);
-
-        mExecutor.execute(task);
+        DLPrepare dlPrepare = new DLPrepare(url, dirPath, listener);
+        mExecutor.execute(dlPrepare);
     }
 
-    /**
-     * 根据下载地址停止下载任务
-     * Stop a download task base on url
-     *
-     * @param url 下载地址 url of remote file
-     */
     public void dlStop(String url) {
         if (sTaskDLing.containsKey(url)) {
             DLTask task = sTaskDLing.get(url);
@@ -113,12 +86,6 @@ public final class DLManager {
         }
     }
 
-    /**
-     * 根据下载地址停取消下载任务
-     * Cancel a download task base on url
-     *
-     * @param url 下载地址 url of remote file
-     */
     public void dlCancel(String url) {
         dlStop(url);
         if (null != sDBManager.queryTaskInfoByUrl(url)) {
@@ -130,12 +97,49 @@ public final class DLManager {
         }
     }
 
-    /**
-     * 释放资源 暂未使用
-     * Release resource. No use.
-     */
-    public void release() {
-        mExecutor.shutdown();
+    private class DLPrepare implements Runnable {
+        private String url, dirPath;
+        private DLTaskListener listener;
+
+        private DLPrepare(String url, String dirPath, DLTaskListener listener) {
+            this.url = url;
+            this.dirPath = dirPath;
+            this.listener = listener;
+        }
+
+        @Override
+        public void run() {
+            HttpURLConnection conn = null;
+            try {
+                String realUrl = url;
+                conn = NetUtil.buildConnection(url);
+                conn.setInstanceFollowRedirects(false);
+                conn.setRequestProperty(HttpConnPars.REFERER.content, url);
+                if (conn.getResponseCode() == HttpStatus.SC_MOVED_TEMPORARILY ||
+                        conn.getResponseCode() == HttpStatus.SC_MOVED_PERMANENTLY) {
+                    realUrl = conn.getHeaderField(HttpConnPars.LOCATION.content);
+                }
+                if (sTaskDLing.containsKey(realUrl)) {
+                    // 文件正在下载 File is downloading
+                } else {
+                    TaskInfo info = sDBManager.queryTaskInfoByUrl(realUrl);
+                    String fileName = FileUtil.getFileNameFromUrl(realUrl).replace("/", "");
+                    if (null != listener) listener.onStart(fileName, realUrl);
+                    File file = new File(dirPath, fileName);
+                    if (null == info || !file.exists()) {
+                        info = new TaskInfo(FileUtil.createFile(dirPath, fileName), realUrl, 0, 0);
+                    }
+                    DLTask task = new DLTask(info, listener);
+                    mExecutor.execute(task);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                if (null != conn) {
+                    conn.disconnect();
+                }
+            }
+        }
     }
 
     private class DLTask implements Runnable, IDLThreadListener {
@@ -157,7 +161,6 @@ public final class DLManager {
             this.info = info;
             this.mListener = listener;
             this.totalProgress = info.progress;
-            LogUtil.i("Last time we were download " + totalProgress + "byte.");
             this.fileLength = info.length;
 
             if (null != sDBManager.queryTaskInfoByUrl(info.url)) {
@@ -189,9 +192,7 @@ public final class DLManager {
             }
             if (isConnect) {
                 sTaskDLing.put(info.url, this);
-
                 if (isResume) {
-                    LogUtil.i("Resume download.");
                     for (ThreadInfo i : mThreadInfos) {
                         mExecutor.execute(new DLThread(i, this));
                     }
@@ -199,12 +200,9 @@ public final class DLManager {
                     HttpURLConnection conn = null;
                     try {
                         conn = NetUtil.buildConnection(info.url);
-
-                        if (conn.getResponseCode() == HttpStatus.SC_OK) {
+                        if (conn.getResponseCode() == HttpStatus.SC_PARTIAL_CONTENT) {
                             fileLength = conn.getContentLength();
-
                             if (info.dlLocalFile.exists() && info.dlLocalFile.length() == fileLength) {
-                                LogUtil.i("File exists!");
                                 isExists = true;
                                 sTaskDLing.remove(info.url);
                                 if (null != mListener) mListener.onFinish(info.dlLocalFile);
@@ -212,30 +210,36 @@ public final class DLManager {
                             if (!isExists) {
                                 info.length = fileLength;
                                 sDBManager.insertTaskInfo(info);
-
                                 int threadSize;
+                                int length = LENGTH_PER_THREAD;
                                 if (fileLength <= LENGTH_PER_THREAD) {
                                     threadSize = 3;
+                                    length = fileLength / threadSize;
                                 } else {
                                     threadSize = fileLength / LENGTH_PER_THREAD;
                                 }
-                                LogUtil.i("We will start " + threadSize + " threads.");
-                                int remainder = fileLength % LENGTH_PER_THREAD;
-                                LogUtil.i("The last thread will download " + remainder + " more bytes.");
+                                int remainder = fileLength % length;
                                 for (int i = 0; i < threadSize; i++) {
-                                    int start = i * LENGTH_PER_THREAD;
-                                    int end = start + LENGTH_PER_THREAD - 1;
+                                    int start = i * length;
+                                    int end = start + length - 1;
                                     if (i == threadSize - 1) {
-                                        end = start + LENGTH_PER_THREAD + remainder;
+                                        end = start + length + remainder;
                                     }
                                     String id = UUID.randomUUID().toString();
-                                    LogUtil.i("The thread " + id + " will download from " + start + " to " +
-                                            "" + end + " byte.");
                                     ThreadInfo ti = new ThreadInfo(info.dlLocalFile, info.url, start,
                                             end, id);
-
                                     mExecutor.execute(new DLThread(ti, this));
                                 }
+                            }
+                        } else if (conn.getResponseCode() == HttpStatus.SC_OK) {
+                            fileLength = conn.getContentLength();
+                            if (info.dlLocalFile.exists() && info.dlLocalFile.length() == fileLength) {
+                                sTaskDLing.remove(info.url);
+                                if (null != mListener) mListener.onFinish(info.dlLocalFile);
+                            } else {
+                                ThreadInfo ti = new ThreadInfo(info.dlLocalFile, info.url, 0, fileLength,
+                                        UUID.randomUUID().toString());
+                                mExecutor.execute(new DLThread(ti, this));
                             }
                         }
                     } catch (Exception e) {
@@ -264,13 +268,11 @@ public final class DLManager {
                     totalProgressIn100 = tmp;
                 }
                 if (fileLength == totalProgress) {
-                    LogUtil.i(info.url + " download finish!");
                     sDBManager.deleteTaskInfo(info.url);
                     sTaskDLing.remove(info.url);
                     if (null != mListener) mListener.onFinish(info.dlLocalFile);
                 }
                 if (isStop) {
-                    LogUtil.i("We were downloaded " + totalProgress + " bytes already.");
                     info.progress = totalProgress;
                     sDBManager.updateTaskInfo(info);
                     sTaskDLing.remove(info.url);
@@ -287,7 +289,6 @@ public final class DLManager {
             public DLThread(ThreadInfo info, IDLThreadListener listener) {
                 this.info = info;
                 this.mListener = listener;
-                LogUtil.i("Thread " + info.id + " will start from " + info.start + " to " + info.end + " bytes.");
             }
 
             @Override
@@ -297,36 +298,38 @@ public final class DLManager {
                 InputStream is = null;
                 try {
                     conn = NetUtil.buildConnection(info.url);
-                    conn.setRequestProperty("Range", "bytes=" + info.start + "-" + info.end);
-
                     raf = new RandomAccessFile(info.dlLocalFile,
                             PublicCons.AccessModes.ACCESS_MODE_RWD);
-
                     if (conn.getResponseCode() == HttpStatus.SC_PARTIAL_CONTENT) {
+                        conn.setRequestProperty("Range", "bytes=" + info.start + "-" + info.end);
                         if (!isResume) {
                             sDBManager.insertThreadInfo(info);
                         }
                         is = conn.getInputStream();
                         raf.seek(info.start);
                         int total = info.end - info.start;
-
                         byte[] b = new byte[1024];
                         int len;
                         while (!isStop && (len = is.read(b)) != -1) {
                             raf.write(b, 0, len);
-
                             progress += len;
-
                             mListener.onThreadProgress(len);
-
                             if (progress >= total) {
-                                LogUtil.i("Thread " + info.id + " finish!");
                                 sDBManager.deleteThreadInfoById(info.id);
                             }
                         }
                         if (isStop && null != sDBManager.queryThreadInfoById(info.id)) {
                             info.start = info.start + progress;
                             sDBManager.updateThreadInfo(info);
+                        }
+                    } else if (conn.getResponseCode() == HttpStatus.SC_OK) {
+                        is = conn.getInputStream();
+                        raf.seek(info.start);
+                        byte[] b = new byte[1024];
+                        int len;
+                        while (!isStop && (len = is.read(b)) != -1) {
+                            raf.write(b, 0, len);
+                            mListener.onThreadProgress(len);
                         }
                     }
                 } catch (Exception e) {

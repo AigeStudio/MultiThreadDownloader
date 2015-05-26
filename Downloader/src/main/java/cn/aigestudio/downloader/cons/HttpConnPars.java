@@ -12,7 +12,9 @@ public enum HttpConnPars {
     ACCECT_LANGAGE("Accept-Language", "zh-CN"),
     CHARSET("Charset", "UTF-8"),
     CONNECTTIEMEDOUT("5000"),
-    KEEPCONNECT("Connection", "Keep-Alive");
+    KEEPCONNECT("Connection", "Keep-Alive"),
+    LOCATION("location"),
+    REFERER("referer");
 
     public String header;
     public String content;

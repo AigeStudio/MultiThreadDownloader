@@ -13,11 +13,10 @@ public class DLTaskListener {
      * 下载开始时回调 暂未使用
      * Callback when download start. No use.
      *
-     * @param length 文件字节长度 File length in byte.
+     * @param fileName 文件名 File name.
+     * @param url      文件下载地址 File length in byte.
      */
-//    public void onStart(int length) {
-//
-//    }
+    public void onStart(String fileName, String url) {}
 
     /**
      * 网络连接时回调
