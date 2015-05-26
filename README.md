@@ -1,15 +1,22 @@
+[![Android Arsenal](https://img.shields.io/badge/Android%20Arsenal-MultiThreadDownloader-brightgreen.svg?style=flat)](http://android-arsenal.com/details/1/1865)
+
 *You can jump to EN README after CN if you don't read chinese.*
 ***
 **Here is begin of CN document.**
 # Andorid多线程断点续传下载器
 逻辑比较简单但实用的Android多线程断点续传下载器
+##Android API 版本要求
+**API 1**
 ##版本迭代
 ###1.0.0 Release
 多线程断点续传暂未发现问题
 ##预览图
 **在普通界面中下载**
+
 ![](https://github.com/AigeStudio/MultiThreadDownloader/blob/master/preview1.gif)
+
 **在状态栏中下载**
+
 ![](https://github.com/AigeStudio/MultiThreadDownloader/blob/master/preview2.gif)
 ##功能简介
 * 多线程下载
@@ -36,6 +43,7 @@ compile project(':Downloader')
 ```
 ##如何使用
 一旦将Downloader集成到项目后你便可以调用DLManager中的dlStart、dlStop和dlCancel方法来开始、停止和取消一个下载任务：
+
 **开始一个下载任务**
 ```Java
 DLManager.getInstance(context).dlStart(url, dirPath, null);
@@ -70,13 +78,18 @@ DLManager.getInstance(context).dlCancel(url);
 **这里开始是英文文档**
 # Downloader for Android multi-thread http download
 Easy and useful downloader for Android
+##Android API Needs
+**API 1**
 ##Version
 ###1.0.0 Release
 Multi-thread http download
 ##Preview
 **Download in activity**
+
 ![](https://github.com/AigeStudio/MultiThreadDownloader/blob/master/preview1.gif)
+
 **Download in statusbar**
+
 ![](https://github.com/AigeStudio/MultiThreadDownloader/blob/master/preview2.gif)
 ##Function
 * Multi-thread
@@ -102,7 +115,8 @@ Add something like below in your build.gradle file of project:
 compile project(':Downloader')
 ```
 ##Usage
-Once you add DatePicker to your project you can use method dlStart dlStop and dlCancel provide by DLManager to start stop and cancel a download task:
+Once you add Downloader to your project you can use method dlStart dlStop and dlCancel provide by DLManager to start stop and cancel a download task:
+
 **Start a download task**
 ```Java
 DLManager.getInstance(context).dlStart(url, dirPath, null);
@@ -129,7 +143,7 @@ Just use dlStop method and transfer url to stop a download task.
 ```Java
 DLManager.getInstance(context).dlCancel(url);
 ```
-Similarly, use dlCancelmethod and transfer url to cancel a download task. The difference between dlStop and dlCancel is whether the data in database would be deleted or not, for example, the state of download like local file and data in database will be save when you use dlStop stop a download task, if you use dlCancel cancel a download task, anything related to download task would be deleted. note:**The unique identification of a download task is url**.
+Similarly, use dlCancel method and transfer url to cancel a download task. The difference between dlStop and dlCancel is whether the data in database would be deleted or not, for example, the state of download like local file and data in database will be save when you use dlStop stop a download task, if you use dlCancel cancel a download task, anything related to download task would be deleted. note:**The unique identification of a download task is url**.
 
 More for usage please see Demo.
 
