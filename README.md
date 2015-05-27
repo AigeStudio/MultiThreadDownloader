@@ -33,10 +33,16 @@
 更多的功能方法可查看[DLManager.java](https://github.com/AigeStudio/MultiThreadDownloader/blob/master/Downloader/src/main/java/cn/aigestudio/downloader/bizs/DLManager.java)
 
 ##如何集成到项目
-###步骤一
+###方式一 直接从maven center compile
+```java
+compile 'cn.aigestudio.downloader:Downloader:1.2.1'
+```
+
+###方式二 自己动手
+####步骤一
 将Downloader这个Module导入你的Project中
 
-###步骤二
+####步骤二
 在你Project的settings.gradle文件中增加如下内容：
 
 ```gradle
@@ -51,7 +57,7 @@ include ':YourMoudle',':Downloader'
 
 添加后当出现“sycn now”提示时点击同步即可
 
-###步骤三
+####步骤三
 在你项目的build.gradle文件的dependencies区域中添加如下内容：
 
 ```gradle
@@ -134,10 +140,16 @@ Easy and useful downloader for Android
 You can see [DLManager.java](https://github.com/AigeStudio/MultiThreadDownloader/blob/master/Downloader/src/main/java/cn/aigestudio/downloader/bizs/DLManager.java) for more help.
 
 ##How to add to your project
-###step 1
+###Method A:compile from maven center
+```java
+compile 'cn.aigestudio.downloader:Downloader:1.2.1'
+```
+
+###Method B:Help yourself
+####step 1
 import Downloaderlib to your project
 
-###step 2
+####step 2
 Add something like below in your settings.gradle file of project:
 
 ```gradle
@@ -152,7 +164,7 @@ include ':YourMoudle',':Downloader'
 
 Click 'sycn now' when it appear after module add.
 
-###step 3
+####step 3
 Add something like below in your build.gradle file of project:
 
 ```gradle
