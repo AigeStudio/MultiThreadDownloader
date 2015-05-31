@@ -1,7 +1,6 @@
 package cn.aigestudio.downloader.bizs;
 
 import android.content.Context;
-import android.widget.Toast;
 
 import org.apache.http.HttpStatus;
 
@@ -23,7 +22,6 @@ import cn.aigestudio.downloader.entities.ThreadInfo;
 import cn.aigestudio.downloader.interfaces.DLTaskListener;
 import cn.aigestudio.downloader.interfaces.IDLThreadListener;
 import cn.aigestudio.downloader.utils.FileUtil;
-import cn.aigestudio.downloader.utils.LogUtil;
 import cn.aigestudio.downloader.utils.NetUtil;
 
 /**
@@ -49,6 +47,11 @@ import cn.aigestudio.downloader.utils.NetUtil;
  *         DLManager will download with single thread if server does not support break-point, and it will not insert to database
  *         Support url redirection.
  *         Change download thread size dispath.
+ * @author AigeStudio 2015-05-29
+ *         修改域名重定向后无法多线程下载问题
+ *         修改域名重定向后无法暂停问题
+ *         Bugfix:can not start multi-threads to download file when we in url redirection.
+ *         Bugfix:can not stop a download task when we in url redirection.
  */
 public final class DLManager {
     private static final int THREAD_POOL_SIZE = 32;
@@ -98,8 +101,8 @@ public final class DLManager {
     }
 
     private class DLPrepare implements Runnable {
-        private String url, dirPath;
-        private DLTaskListener listener;
+        private String url, dirPath;// 下载路径和保存目录
+        private DLTaskListener listener;// 下载监听器
 
         private DLPrepare(String url, String dirPath, DLTaskListener listener) {
             this.url = url;
@@ -119,15 +122,16 @@ public final class DLManager {
                         conn.getResponseCode() == HttpStatus.SC_MOVED_PERMANENTLY) {
                     realUrl = conn.getHeaderField(HttpConnPars.LOCATION.content);
                 }
-                if (sTaskDLing.containsKey(realUrl)) {
+                // 如果文件正在下载
+                if (sTaskDLing.containsKey(url)) {
                     // 文件正在下载 File is downloading
                 } else {
-                    TaskInfo info = sDBManager.queryTaskInfoByUrl(realUrl);
+                    TaskInfo info = sDBManager.queryTaskInfoByUrl(url);
                     String fileName = FileUtil.getFileNameFromUrl(realUrl).replace("/", "");
                     if (null != listener) listener.onStart(fileName, realUrl);
                     File file = new File(dirPath, fileName);
                     if (null == info || !file.exists()) {
-                        info = new TaskInfo(FileUtil.createFile(dirPath, fileName), realUrl, 0, 0);
+                        info = new TaskInfo(FileUtil.createFile(dirPath, fileName), url, realUrl, 0, 0);
                     }
                     DLTask task = new DLTask(info, listener);
                     mExecutor.execute(task);
@@ -163,15 +167,15 @@ public final class DLManager {
             this.totalProgress = info.progress;
             this.fileLength = info.length;
 
-            if (null != sDBManager.queryTaskInfoByUrl(info.url)) {
+            if (null != sDBManager.queryTaskInfoByUrl(info.baseUrl)) {
                 if (!info.dlLocalFile.exists()) {
-                    sDBManager.deleteTaskInfo(info.url);
+                    sDBManager.deleteTaskInfo(info.baseUrl);
                 }
-                mThreadInfos = sDBManager.queryThreadInfos(info.url);
+                mThreadInfos = sDBManager.queryThreadInfos(info.baseUrl);
                 if (null != mThreadInfos && mThreadInfos.size() != 0) {
                     isResume = true;
                 } else {
-                    sDBManager.deleteTaskInfo(info.url);
+                    sDBManager.deleteTaskInfo(info.baseUrl);
                 }
             }
         }
@@ -191,7 +195,7 @@ public final class DLManager {
                     isConnect = mListener.onConnect(PublicCons.NetType.NO_WIFI, "正在使用非WIFI网络下载");
             }
             if (isConnect) {
-                sTaskDLing.put(info.url, this);
+                sTaskDLing.put(info.baseUrl, this);
                 if (isResume) {
                     for (ThreadInfo i : mThreadInfos) {
                         mExecutor.execute(new DLThread(i, this));
@@ -199,12 +203,13 @@ public final class DLManager {
                 } else {
                     HttpURLConnection conn = null;
                     try {
-                        conn = NetUtil.buildConnection(info.url);
+                        conn = NetUtil.buildConnection(info.realUrl);
+                        conn.setRequestProperty("Range", "bytes=" + 0 + "-" + Integer.MAX_VALUE);
                         if (conn.getResponseCode() == HttpStatus.SC_PARTIAL_CONTENT) {
                             fileLength = conn.getContentLength();
                             if (info.dlLocalFile.exists() && info.dlLocalFile.length() == fileLength) {
                                 isExists = true;
-                                sTaskDLing.remove(info.url);
+                                sTaskDLing.remove(info.baseUrl);
                                 if (null != mListener) mListener.onFinish(info.dlLocalFile);
                             }
                             if (!isExists) {
@@ -226,27 +231,28 @@ public final class DLManager {
                                         end = start + length + remainder;
                                     }
                                     String id = UUID.randomUUID().toString();
-                                    ThreadInfo ti = new ThreadInfo(info.dlLocalFile, info.url, start,
-                                            end, id);
+                                    ThreadInfo ti = new ThreadInfo(info.dlLocalFile,
+                                            info.baseUrl, info.realUrl, start, end, id);
+
                                     mExecutor.execute(new DLThread(ti, this));
                                 }
                             }
                         } else if (conn.getResponseCode() == HttpStatus.SC_OK) {
                             fileLength = conn.getContentLength();
                             if (info.dlLocalFile.exists() && info.dlLocalFile.length() == fileLength) {
-                                sTaskDLing.remove(info.url);
+                                sTaskDLing.remove(info.baseUrl);
                                 if (null != mListener) mListener.onFinish(info.dlLocalFile);
                             } else {
-                                ThreadInfo ti = new ThreadInfo(info.dlLocalFile, info.url, 0, fileLength,
-                                        UUID.randomUUID().toString());
+                                ThreadInfo ti = new ThreadInfo(info.dlLocalFile, info.baseUrl,
+                                        info.realUrl, 0, fileLength, UUID.randomUUID().toString());
                                 mExecutor.execute(new DLThread(ti, this));
                             }
                         }
                     } catch (Exception e) {
-                        if (null != sDBManager.queryTaskInfoByUrl(info.url)) {
+                        if (null != sDBManager.queryTaskInfoByUrl(info.baseUrl)) {
                             info.progress = totalProgress;
                             sDBManager.updateTaskInfo(info);
-                            sTaskDLing.remove(info.url);
+                            sTaskDLing.remove(info.baseUrl);
                         }
                         if (null != mListener) mListener.onError(e.getMessage());
                     } finally {
@@ -268,14 +274,14 @@ public final class DLManager {
                     totalProgressIn100 = tmp;
                 }
                 if (fileLength == totalProgress) {
-                    sDBManager.deleteTaskInfo(info.url);
-                    sTaskDLing.remove(info.url);
+                    sDBManager.deleteTaskInfo(info.baseUrl);
+                    sTaskDLing.remove(info.baseUrl);
                     if (null != mListener) mListener.onFinish(info.dlLocalFile);
                 }
                 if (isStop) {
                     info.progress = totalProgress;
                     sDBManager.updateTaskInfo(info);
-                    sTaskDLing.remove(info.url);
+                    sTaskDLing.remove(info.baseUrl);
                 }
             }
         }
@@ -297,11 +303,12 @@ public final class DLManager {
                 RandomAccessFile raf = null;
                 InputStream is = null;
                 try {
-                    conn = NetUtil.buildConnection(info.url);
+                    conn = NetUtil.buildConnection(info.realUrl);
+                    conn.setRequestProperty("Range", "bytes=" + info.start + "-" + info.end);
+
                     raf = new RandomAccessFile(info.dlLocalFile,
                             PublicCons.AccessModes.ACCESS_MODE_RWD);
                     if (conn.getResponseCode() == HttpStatus.SC_PARTIAL_CONTENT) {
-                        conn.setRequestProperty("Range", "bytes=" + info.start + "-" + info.end);
                         if (!isResume) {
                             sDBManager.insertThreadInfo(info);
                         }

@@ -8,19 +8,22 @@ import cn.aigestudio.downloader.cons.PublicCons;
 
 /**
  * 打开数据库的帮助类
- * 如果你想将表建立在自己的数据库直接将{@link #onCreate(android.database.sqlite.SQLiteDatabase)}和
- * {@link #onUpgrade(android.database.sqlite.SQLiteDatabase, int, int)}方法中的逻辑Copy至在你自己
- * SQLiteOpenHelper类的onCreate和onUpgrade方法中
  * Database open helper
- * You can use your own database just execute the {@link PublicCons.DBCons#TB_TASK_SQL_CREATE} and
- * {@link PublicCons.DBCons#TB_THREAD_SQL_CREATE} in onCreate method which in your SQLiteOpenHelper,
- * also the {@link PublicCons.DBCons#TB_TASK_SQL_UPGRADE} and {@link PublicCons.DBCons#TB_THREAD_SQL_UPGRADE} in onUpgrade.
  *
  * @author AigeStudio 2015-05-08
+ *         如果你想将表建立在自己的数据库直接将{@link #onCreate(android.database.sqlite.SQLiteDatabase)}和
+ *         {@link #onUpgrade(android.database.sqlite.SQLiteDatabase, int, int)}方法中的逻辑Copy至在你自己
+ *         SQLiteOpenHelper类的onCreate和onUpgrade方法中
+ *         You can use your own database just execute the {@link PublicCons.DBCons#TB_TASK_SQL_CREATE} and
+ *         {@link PublicCons.DBCons#TB_THREAD_SQL_CREATE} in onCreate method which in your SQLiteOpenHelper,
+ *         also the {@link PublicCons.DBCons#TB_TASK_SQL_UPGRADE} and {@link PublicCons.DBCons#TB_THREAD_SQL_UPGRADE} in onUpgrade.
+ * @author AigeStudio 2015-05-29
+ *         数据库版本升级
+ *         Update database version.
  */
 public final class DBOpenHelper extends SQLiteOpenHelper {
     private static final String DB_NAME = "dl.db";
-    private static final int DB_VERSION = 1;
+    private static final int DB_VERSION = 2;
 
     public DBOpenHelper(Context context) {
         super(context, DB_NAME, null, DB_VERSION);

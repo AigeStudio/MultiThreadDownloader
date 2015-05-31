@@ -41,12 +41,13 @@ public class NetUtil {
     public static HttpURLConnection buildConnection(String url, boolean isAlive) throws IOException {
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
         connection.setRequestMethod(HttpConnPars.POST.content);
-        connection.setConnectTimeout(Integer.parseInt(HttpConnPars.CONNECTTIEMEDOUT.content));
-        connection.setRequestProperty(HttpConnPars.ACCECT.header, HttpConnPars.ACCECT.content);
-        connection.setRequestProperty(HttpConnPars.ACCECT_LANGAGE.header, HttpConnPars.ACCECT_LANGAGE.content);
+        connection.setConnectTimeout(Integer.parseInt(HttpConnPars.CONNECT_TIMEOUT.content));
+        connection.setRequestProperty(HttpConnPars.ACCEPT.header, HttpConnPars.ACCEPT.content);
+        connection.setRequestProperty(HttpConnPars.ACCEPT_RANGE.header, HttpConnPars.ACCEPT_RANGE.content);
+        connection.setRequestProperty(HttpConnPars.ACCEPT_LANGUAGE.header, HttpConnPars.ACCEPT_LANGUAGE.content);
         connection.setRequestProperty(HttpConnPars.CHARSET.header, HttpConnPars.CHARSET.content);
         if (isAlive) {
-            connection.setRequestProperty(HttpConnPars.KEEPCONNECT.header, HttpConnPars.KEEPCONNECT.content);
+            connection.setRequestProperty(HttpConnPars.KEEP_CONNECT.header, HttpConnPars.KEEP_CONNECT.content);
         }
         return connection;
     }

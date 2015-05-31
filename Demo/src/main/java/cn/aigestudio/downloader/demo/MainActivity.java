@@ -12,7 +12,8 @@ import cn.aigestudio.downloader.interfaces.DLTaskListener;
 
 public class MainActivity extends Activity {
     private static final String[] URLS = {
-            "http://dlsw.baidu.com/sw-search-sp/soft/94/23191/BaiduWubiSetup-1_2_0_13.1401780898.exe",
+            "http://xiazai.zol.com.cn/down.php?nn=f4afd4327335fd3a1&softid=325408&subcateid=103&site=10&server=10&rand=3331525",
+//            "http://dlsw.baidu.com/sw-search-sp/soft/94/23191/BaiduWubiSetup-1_2_0_13.1401780898.exe",
             "http://dlsw.baidu.com/sw-search-sp/soft/4f/20605/BaiduType_Setup_Light.1413528566.exe",
             "http://dlsw.baidu.com/sw-search-sp/soft/4e/16671/freewb10th.322658870.exe",
             "http://dlsw.baidu.com/sw-search-sp/soft/50/15251/zzbihua_V7.0.7.4_Setup.1422241616.exe",

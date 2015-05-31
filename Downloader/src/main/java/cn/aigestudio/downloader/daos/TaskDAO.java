@@ -16,6 +16,8 @@ import cn.aigestudio.downloader.interfaces.DAO;
  * DAO for download task.
  *
  * @author AigeStudio 2015-05-09
+ * @author AigeStudio 2015-05-29
+ *         根据域名重定向问题进行逻辑修改
  */
 public class TaskDAO extends DAO {
     public TaskDAO(Context context) {
@@ -27,11 +29,13 @@ public class TaskDAO extends DAO {
         TaskInfo i = (TaskInfo) info;
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         db.execSQL("INSERT INTO " + PublicCons.DBCons.TB_TASK + "(" +
-                PublicCons.DBCons.TB_TASK_URL + ", " +
-                PublicCons.DBCons.TB_TASK_FILE_PATH + ", " +
-                PublicCons.DBCons.TB_TASK_PROGRESS + ", " +
-                PublicCons.DBCons.TB_TASK_FILE_LENGTH + ") values (?,?,?,?)", new Object[]{i.url,
-                i.dlLocalFile.getAbsolutePath(), i.progress, i.length});
+                        PublicCons.DBCons.TB_TASK_URL_BASE + ", " +
+                        PublicCons.DBCons.TB_TASK_URL_REAL + ", " +
+                        PublicCons.DBCons.TB_TASK_FILE_PATH + ", " +
+                        PublicCons.DBCons.TB_TASK_PROGRESS + ", " +
+                        PublicCons.DBCons.TB_TASK_FILE_LENGTH + ") values (?,?,?,?,?)",
+                new Object[]{i.baseUrl, i.realUrl, i.dlLocalFile.getAbsolutePath(), i.progress,
+                        i.length});
         db.close();
     }
 
@@ -39,7 +43,7 @@ public class TaskDAO extends DAO {
     public void deleteInfo(String url) {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         db.execSQL("DELETE FROM " + PublicCons.DBCons.TB_TASK + " WHERE " +
-                PublicCons.DBCons.TB_TASK_URL + "=?", new String[]{url});
+                PublicCons.DBCons.TB_TASK_URL_BASE + "=?", new String[]{url});
         db.close();
     }
 
@@ -49,7 +53,7 @@ public class TaskDAO extends DAO {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         db.execSQL("UPDATE " + PublicCons.DBCons.TB_TASK + " SET " +
                 PublicCons.DBCons.TB_TASK_PROGRESS + "=? WHERE " +
-                PublicCons.DBCons.TB_TASK_URL + "=?", new Object[]{i.progress, i.url});
+                PublicCons.DBCons.TB_TASK_URL_BASE + "=?", new Object[]{i.progress, i.baseUrl});
         db.close();
     }
 
@@ -57,14 +61,17 @@ public class TaskDAO extends DAO {
     public DLInfo queryInfo(String url) {
         TaskInfo info = null;
         SQLiteDatabase db = dbHelper.getWritableDatabase();
-        Cursor c = db.rawQuery("SELECT " + PublicCons.DBCons.TB_TASK_URL + ", " +
+        Cursor c = db.rawQuery("SELECT " +
+                PublicCons.DBCons.TB_TASK_URL_BASE + ", " +
+                PublicCons.DBCons.TB_TASK_URL_REAL + ", " +
                 PublicCons.DBCons.TB_TASK_FILE_PATH + ", " +
                 PublicCons.DBCons.TB_TASK_PROGRESS + ", " +
                 PublicCons.DBCons.TB_TASK_FILE_LENGTH + " FROM " +
                 PublicCons.DBCons.TB_TASK + " WHERE " +
-                PublicCons.DBCons.TB_TASK_URL + "=?", new String[]{url});
+                PublicCons.DBCons.TB_TASK_URL_BASE + "=?", new String[]{url});
         if (c.moveToFirst()) {
-            info = new TaskInfo(new File(c.getString(1)), c.getString(0), c.getInt(2), c.getInt(3));
+            info = new TaskInfo(new File(c.getString(2)), c.getString(0),c.getString(1),
+                    c.getInt(3), c.getInt(4));
         }
         c.close();
         db.close();

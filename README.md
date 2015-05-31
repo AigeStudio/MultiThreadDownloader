@@ -10,13 +10,17 @@
 ##Android API 版本要求
 **API 1**
 ##版本迭代
-###1.0.0 Release
+###1.0.0 release
 * 多线程断点续传暂未发现问题
 
-###1.2.1 Release
+###1.2.1 release
 * 修复下载线程分配问题
 * 支持域名地址重定向
 * 如果服务器不支持断点下载则启用单线程下载且不存储于数据库
+
+###1.3.7 release
+* 修复域名重定向后不能进行多线程下载的问题
+* 修复域名重定向后不能停止下载任务的问题
 
 ##预览图
 **在普通界面中下载**
@@ -116,13 +120,17 @@ Easy and useful downloader for Android
 **API 1**
 
 ##Version
-###1.0.0 Release
+###1.0.0 release
 * Multi-thread http download
 
-###1.2.1 Release
+###1.2.1 release
 * Bugfix:download thread dispath
 * Support url redirection
 * DLManager will download with single thread if server does not support break-point, and it will not insert to database
+
+###1.3.7 release
+* Bugfix:can not start multi-threads to download file when we in url redirection.
+* Bugfix:can not stop a download task when we in url redirection.
 
 ##Preview
 **Download in activity**

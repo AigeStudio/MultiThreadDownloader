@@ -18,6 +18,8 @@ import cn.aigestudio.downloader.interfaces.DAO;
  * DAO for thread.
  *
  * @author AigeStudio 2015-05-16
+ * @author AigeStudio 2015-05-29
+ *         根据域名重定向问题进行逻辑修改
  */
 public class ThreadDAO extends DAO {
     public ThreadDAO(Context context) {
@@ -29,12 +31,14 @@ public class ThreadDAO extends DAO {
         ThreadInfo i = (ThreadInfo) info;
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         db.execSQL("INSERT INTO " + PublicCons.DBCons.TB_THREAD + "(" +
-                PublicCons.DBCons.TB_THREAD_URL + ", " +
-                PublicCons.DBCons.TB_THREAD_FILE_PATH + ", " +
-                PublicCons.DBCons.TB_THREAD_START + ", " +
-                PublicCons.DBCons.TB_THREAD_END + ", " +
-                PublicCons.DBCons.TB_THREAD_ID + ") VALUES (?,?,?,?,?)", new Object[]{i.url,
-                i.dlLocalFile.getAbsolutePath(), i.start, i.end, i.id});
+                        PublicCons.DBCons.TB_THREAD_URL_BASE + ", " +
+                        PublicCons.DBCons.TB_THREAD_URL_REAL + ", " +
+                        PublicCons.DBCons.TB_THREAD_FILE_PATH + ", " +
+                        PublicCons.DBCons.TB_THREAD_START + ", " +
+                        PublicCons.DBCons.TB_THREAD_END + ", " +
+                        PublicCons.DBCons.TB_THREAD_ID + ") VALUES (?,?,?,?,?,?)",
+                new Object[]{i.baseUrl, i.realUrl, i.dlLocalFile.getAbsolutePath(), i.start,
+                        i.end, i.id});
         db.close();
     }
 
@@ -49,7 +53,7 @@ public class ThreadDAO extends DAO {
     public void deleteInfos(String url) {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         db.execSQL("DELETE FROM " + PublicCons.DBCons.TB_THREAD + " WHERE " +
-                PublicCons.DBCons.TB_THREAD_URL + "=?", new String[]{url});
+                PublicCons.DBCons.TB_THREAD_URL_BASE + "=?", new String[]{url});
         db.close();
     }
 
@@ -59,8 +63,8 @@ public class ThreadDAO extends DAO {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         db.execSQL("UPDATE " + PublicCons.DBCons.TB_THREAD + " SET " +
                 PublicCons.DBCons.TB_THREAD_START + "=? WHERE " +
-                PublicCons.DBCons.TB_THREAD_URL + "=? AND " +
-                PublicCons.DBCons.TB_THREAD_ID + "=?", new Object[]{i.start, i.url, i.id});
+                PublicCons.DBCons.TB_THREAD_URL_BASE + "=? AND " +
+                PublicCons.DBCons.TB_THREAD_ID + "=?", new Object[]{i.start, i.baseUrl, i.id});
         db.close();
     }
 
@@ -68,15 +72,17 @@ public class ThreadDAO extends DAO {
     public DLInfo queryInfo(String id) {
         ThreadInfo info = null;
         SQLiteDatabase db = dbHelper.getWritableDatabase();
-        Cursor c = db.rawQuery("SELECT " + PublicCons.DBCons.TB_THREAD_URL + ", " +
+        Cursor c = db.rawQuery("SELECT " +
+                PublicCons.DBCons.TB_THREAD_URL_BASE + ", " +
+                PublicCons.DBCons.TB_THREAD_URL_REAL + ", " +
                 PublicCons.DBCons.TB_THREAD_FILE_PATH + ", " +
                 PublicCons.DBCons.TB_THREAD_START + ", " +
                 PublicCons.DBCons.TB_THREAD_END + " FROM " +
                 PublicCons.DBCons.TB_THREAD + " WHERE " +
                 PublicCons.DBCons.TB_THREAD_ID + "=?", new String[]{id});
         if (c.moveToFirst()) {
-            info = new ThreadInfo(new File(c.getString(1)), c.getString(0), c.getInt(2),
-                    c.getInt(3), id);
+            info = new ThreadInfo(new File(c.getString(2)), c.getString(0), c.getString(1),
+                    c.getInt(3), c.getInt(4), id);
         }
         c.close();
         db.close();
@@ -86,16 +92,18 @@ public class ThreadDAO extends DAO {
     public List<ThreadInfo> queryInfos(String url) {
         List<ThreadInfo> infos = new ArrayList<>();
         SQLiteDatabase db = dbHelper.getWritableDatabase();
-        Cursor c = db.rawQuery("SELECT " + PublicCons.DBCons.TB_THREAD_URL + ", " +
+        Cursor c = db.rawQuery("SELECT " +
+                PublicCons.DBCons.TB_THREAD_URL_BASE + ", " +
+                PublicCons.DBCons.TB_THREAD_URL_REAL + ", " +
                 PublicCons.DBCons.TB_THREAD_FILE_PATH + ", " +
                 PublicCons.DBCons.TB_THREAD_START + ", " +
                 PublicCons.DBCons.TB_THREAD_END + ", " +
                 PublicCons.DBCons.TB_THREAD_ID + " FROM " +
                 PublicCons.DBCons.TB_THREAD + " WHERE " +
-                PublicCons.DBCons.TB_THREAD_URL + "=?", new String[]{url});
+                PublicCons.DBCons.TB_THREAD_URL_BASE + "=?", new String[]{url});
         while (c.moveToNext()) {
-            infos.add(new ThreadInfo(new File(c.getString(1)), c.getString(0), c.getInt(2),
-                    c.getInt(3), c.getString(4)));
+            infos.add(new ThreadInfo(new File(c.getString(2)), c.getString(0),c.getString(1),
+                    c.getInt(3),  c.getInt(4), c.getString(5)));
         }
         c.close();
         db.close();

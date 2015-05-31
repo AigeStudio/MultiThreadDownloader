@@ -11,10 +11,11 @@ import java.io.Serializable;
  */
 public class DLInfo implements Serializable {
     public File dlLocalFile;
-    public String url;
+    public String baseUrl, realUrl;
 
-    public DLInfo(File dlLocalFile, String url) {
+    public DLInfo(File dlLocalFile, String baseUrl, String realUrl) {
         this.dlLocalFile = dlLocalFile;
-        this.url = url;
+        this.baseUrl = baseUrl;
+        this.realUrl = realUrl;
     }
 }
