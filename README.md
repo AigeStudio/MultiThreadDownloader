@@ -39,7 +39,7 @@
 ##如何集成到项目
 ###方式一 直接从maven center compile
 ```java
-compile 'cn.aigestudio.downloader:Downloader:1.2.1'
+compile 'cn.aigestudio.downloader:Downloader:1.3.7'
 ```
 
 ###方式二 自己动手
@@ -150,7 +150,7 @@ You can see [DLManager.java](https://github.com/AigeStudio/MultiThreadDownloader
 ##How to add to your project
 ###Method A:compile from maven center
 ```java
-compile 'cn.aigestudio.downloader:Downloader:1.2.1'
+compile 'cn.aigestudio.downloader:Downloader:1.3.7'
 ```
 
 ###Method B:Help yourself
