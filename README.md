@@ -224,7 +224,7 @@ More for usage please see Demo.
 
 #LICENSE
 
-Copyright 2014-2015 AigeStudio(https://github.com/AigeStudio)
+Copyright 2014-2015 [AigeStudio](https://github.com/AigeStudio), [zhangchi](https://github.com/kxdd2002)
 
 Licensed under the Apache License, Version 2.0 (the "License");you may not use this file except in compliance with the License.
 
