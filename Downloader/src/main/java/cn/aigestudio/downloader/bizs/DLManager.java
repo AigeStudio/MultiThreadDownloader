@@ -57,8 +57,12 @@ public final class DLManager {
     private static final int THREAD_POOL_SIZE = 32;
 
     private static DLManager sManager;
-    private static Hashtable<String, DLTask> sTaskDLing;
     private static DBManager sDBManager;
+    /**
+     * 任务列表
+     */
+    private static Hashtable<String, DLTask> sTaskDLing;
+
 
     private ExecutorService mExecutor;
     private Context context;
@@ -100,6 +104,15 @@ public final class DLManager {
         }
     }
 
+    /**
+     * 文件已经开始下载错误提示
+     */
+    public static final String ERROR_DOWNLOADING = "File is downloading";
+    /**
+     * 下载失败：没有网络 错误提示
+     */
+    public static final String ERROR_NO_NETWORK = "no_network";
+
     private class DLPrepare implements Runnable {
         private String url, dirPath;// 下载路径和保存目录
         private DLTaskListener listener;// 下载监听器
@@ -122,19 +135,25 @@ public final class DLManager {
                         conn.getResponseCode() == HttpStatus.SC_MOVED_PERMANENTLY) {
                     realUrl = conn.getHeaderField(HttpConnPars.LOCATION.content);
                 }
-                // 如果文件正在下载
-                if (sTaskDLing.containsKey(url)) {
-                    // 文件正在下载 File is downloading
-                } else {
-                    TaskInfo info = sDBManager.queryTaskInfoByUrl(url);
-                    String fileName = FileUtil.getFileNameFromUrl(realUrl).replace("/", "");
-                    if (null != listener) listener.onStart(fileName, realUrl);
-                    File file = new File(dirPath, fileName);
-                    if (null == info || !file.exists()) {
-                        info = new TaskInfo(FileUtil.createFile(dirPath, fileName), url, realUrl, 0, 0);
+                synchronized (sTaskDLing){//fix: 如果文件正在取消或异常，这里不能立即重新开始，表现为当多次点击下载时：1. 同时引发多个任务下载；2. 点击无效且无任何返回值；需要进行并发线程的业务处理；
+                    // 如果文件正在下载
+//                    DLTask dlTask = sTaskDLing.get(url);
+//                    if (dlTask!=null&&(!dlTask.isStop)) {
+                    if (sTaskDLing.contains(url)) {
+                        // 文件正在下载 File is downloading
+                        if(listener!=null)listener.onError(ERROR_DOWNLOADING);
+                    } else {
+                        TaskInfo info = sDBManager.queryTaskInfoByUrl(url);
+                        String fileName = FileUtil.getFileNameFromUrl(realUrl).replace("/", "");
+                        if (null != listener) listener.onStart(fileName, realUrl);
+                        File file = new File(dirPath, fileName);
+                        if (null == info || !file.exists()) {
+                            info = new TaskInfo(FileUtil.createFile(dirPath, fileName), url, realUrl, 0, 0);
+                        }
+                        DLTask task = new DLTask(info, listener);
+                        sTaskDLing.put(info.baseUrl, task);
+                        mExecutor.execute(task);
                     }
-                    DLTask task = new DLTask(info, listener);
-                    mExecutor.execute(task);
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -195,7 +214,6 @@ public final class DLManager {
                     isConnect = mListener.onConnect(PublicCons.NetType.NO_WIFI, "正在使用非WIFI网络下载");
             }
             if (isConnect) {
-                sTaskDLing.put(info.baseUrl, this);
                 if (isResume) {
                     for (ThreadInfo i : mThreadInfos) {
                         mExecutor.execute(new DLThread(i, this));
@@ -261,6 +279,10 @@ public final class DLManager {
                         }
                     }
                 }
+            }else{
+                //下载失败：网络异常
+                sTaskDLing.remove(info.baseUrl);
+                if (null != mListener) mListener.onError(ERROR_NO_NETWORK);
             }
         }
 
