@@ -105,9 +105,12 @@ public final class DLManager {
     }
 
     public void dlStop(String url) {
-        if (sTaskDLing.containsKey(url)) {
-            DLTask task = sTaskDLing.get(url);
-            task.setStop(true);
+        synchronized (sTaskDLing){
+            if (sTaskDLing.containsKey(url)) {
+                DLTask task = sTaskDLing.get(url);
+                task.setStop(true);
+                sTaskDLing.remove(url);
+            }
         }
     }
 
@@ -165,6 +168,9 @@ public final class DLManager {
                     // 如果文件正在下载
                     if (sTaskDLing.containsKey(url)) {
                         // 文件正在下载 File is downloading
+                        if(isDebug){
+                            Log.d(TAG,"DLPrepare File is downloading ,url:"+url);
+                        }
                         if(listener!=null)listener.onError(ERROR_DOWNLOADING);
                     } else {
                         TaskInfo info = sDBManager.queryTaskInfoByUrl(url);
@@ -177,6 +183,9 @@ public final class DLManager {
                         DLTask task = new DLTask(info, listener);
                         sTaskDLing.put(info.baseUrl, task);
                         mExecutor.execute(task);
+                        if(isDebug){
+                            Log.d(TAG,"DLPrepare File begin new task ,url:"+url);
+                        }
                     }
                 }
             } catch (IOException e) {
@@ -241,6 +250,9 @@ public final class DLManager {
                 if (isResume) {
                     for (ThreadInfo i : mThreadInfos) {
                         mExecutor.execute(new DLThread(i, this));
+                        if(isDebug){
+                            Log.d(TAG,"DLTask resume thread:"+i+" ,url:"+info.baseUrl);
+                        }
                     }
                 } else {
                     HttpURLConnection conn = null;
@@ -286,6 +298,9 @@ public final class DLManager {
                                             info.baseUrl, info.realUrl, start, end, id);
 
                                     mExecutor.execute(new DLThread(ti, this));
+                                    if(isDebug){
+                                        Log.d(TAG,"DLTask begin thread:"+i+" ,url:"+info.baseUrl);
+                                    }
                                 }
                             }
                         } else if (conn.getResponseCode() == HttpStatus.SC_OK) {
@@ -296,17 +311,24 @@ public final class DLManager {
                             if (info.dlLocalFile.exists() && info.dlLocalFile.length() == fileLength) {
                                 sTaskDLing.remove(info.baseUrl);
                                 if (null != mListener) mListener.onFinish(info.dlLocalFile);
+                                if(isDebug){
+                                    Log.d(TAG,"DLTask  file has downloaded,need no thread ,url:"+info.baseUrl);
+                                }
                             } else {
                                 ThreadInfo ti = new ThreadInfo(info.dlLocalFile, info.baseUrl,
                                         info.realUrl, 0, fileLength, UUID.randomUUID().toString());
                                 mExecutor.execute(new DLThread(ti, this));
+                                if(isDebug){
+                                    Log.d(TAG,"DLTask begin single thread ,url:"+info.baseUrl);
+                                }
                             }
                         }
                     } catch (Exception e) {
                         if (null != sDBManager.queryTaskInfoByUrl(info.baseUrl)) {
                             info.progress = totalProgress;
                             sDBManager.updateTaskInfo(info);
-                            sTaskDLing.remove(info.baseUrl);
+                            dlStop(info.baseUrl);
+                            this.setStop(true);
                         }
                         if(isDebug){
                             Log.e(TAG, "DLTask running error:"+e+",url:" + info.baseUrl);
@@ -321,7 +343,7 @@ public final class DLManager {
                 }
             }else{
                 //下载失败：网络异常
-                sTaskDLing.remove(info.baseUrl);
+                dlStop(info.baseUrl);
                 if(isDebug){
                     Log.e(TAG,"DLTask no network error ,url:"+info.baseUrl);
                 }
@@ -342,11 +364,16 @@ public final class DLManager {
                     sDBManager.deleteTaskInfo(info.baseUrl);
                     sTaskDLing.remove(info.baseUrl);
                     if (null != mListener) mListener.onFinish(info.dlLocalFile);
+                    if(isDebug){
+                        Log.d(TAG,"onThreadProgress has download finish ,url:"+info.baseUrl);
+                    }
                 }
                 if (isStop) {
                     info.progress = totalProgress;
                     sDBManager.updateTaskInfo(info);
-                    sTaskDLing.remove(info.baseUrl);
+                    if(isDebug){
+                        Log.d(TAG,"onThreadProgress has stop ,url:"+info.baseUrl);
+                    }
                 }
             }
         }
@@ -394,8 +421,12 @@ public final class DLManager {
                             }
                         }
                         if (isStop && null != sDBManager.queryThreadInfoById(info.id)) {
+                            mListener.onThreadProgress(0);
                             info.start = info.start + progress;
                             sDBManager.updateThreadInfo(info);
+                            if(isDebug){
+                                Log.d(TAG,"DLThread "+info.id+" has stop ,url:"+info.baseUrl);
+                            }
                         }
                     } else if (conn.getResponseCode() == HttpStatus.SC_OK) {
                         if(isDebug){
@@ -408,6 +439,14 @@ public final class DLManager {
                         while (!isStop && (len = is.read(b)) != -1) {
                             raf.write(b, 0, len);
                             mListener.onThreadProgress(len);
+                        }
+                        if(isStop){
+                            mListener.onThreadProgress(0);
+                            info.start = info.start + progress;
+                            sDBManager.updateThreadInfo(info);
+                            if(isDebug){
+                                Log.d(TAG,"DLThread(200) "+info.id+" has stop ,url:"+info.baseUrl);
+                            }
                         }
                     }
                 } catch (Exception e) {
