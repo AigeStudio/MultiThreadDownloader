@@ -1,6 +1,7 @@
 package cn.aigestudio.downloader.bizs;
 
 import android.content.Context;
+import android.util.Log;
 
 import org.apache.http.HttpStatus;
 
@@ -9,9 +10,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.net.HttpURLConnection;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -52,6 +53,10 @@ import cn.aigestudio.downloader.utils.NetUtil;
  *         修改域名重定向后无法暂停问题
  *         Bugfix:can not start multi-threads to download file when we in url redirection.
  *         Bugfix:can not stop a download task when we in url redirection.
+ * @author zhangchi 2015-10-13
+ *         Bugfix：修改多次触发任务时的并发问题，防止同时触发多个相同的下载任务；修改任务队列为线程安全模式；
+ *         修改多线程任务的线程数量设置机制，每个任务可以自定义设置下载线程数量；通过同构方法dlStart(String url, String dirPath, DLTaskListener listener,int threadNum)；
+ *         添加日志开关及日志记录，开关方法为setDebugEnable，日志TAG为DLManager；方便调试;
  */
 public final class DLManager {
     private static final int THREAD_POOL_SIZE = 32;
@@ -61,7 +66,7 @@ public final class DLManager {
     /**
      * 任务列表
      */
-    private static Hashtable<String, DLTask> sTaskDLing;
+    private static ConcurrentHashMap<String, DLTask> sTaskDLing;
 
 
     private ExecutorService mExecutor;
@@ -71,7 +76,7 @@ public final class DLManager {
         this.context = context;
         this.mExecutor = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
         sDBManager = DBManager.getInstance(context);
-        sTaskDLing = new Hashtable<>();
+        sTaskDLing = new ConcurrentHashMap<String, DLTask>();
     }
 
     public static DLManager getInstance(Context context) {
@@ -83,6 +88,19 @@ public final class DLManager {
 
     public void dlStart(String url, String dirPath, DLTaskListener listener) {
         DLPrepare dlPrepare = new DLPrepare(url, dirPath, listener);
+        mExecutor.execute(dlPrepare);
+    }
+
+    /**
+     * 开启下载任务，threadNum为如支持多线程下载时的线程数量（默认为3个）；
+     *
+     * @param url
+     * @param dirPath
+     * @param listener
+     * @param threadNum
+     */
+    public void dlStart(String url, String dirPath, DLTaskListener listener,int threadNum) {
+        DLPrepare dlPrepare = new DLPrepare(url, dirPath, listener,threadNum);
         mExecutor.execute(dlPrepare);
     }
 
@@ -116,6 +134,14 @@ public final class DLManager {
     private class DLPrepare implements Runnable {
         private String url, dirPath;// 下载路径和保存目录
         private DLTaskListener listener;// 下载监听器
+        private int threadNum = defaultThreadNumberSingleTask;
+
+        private DLPrepare(String url, String dirPath, DLTaskListener listener,int threadNum) {
+            this.url = url;
+            this.dirPath = dirPath;
+            this.listener = listener;
+            this.threadNum = threadNum;
+        }
 
         private DLPrepare(String url, String dirPath, DLTaskListener listener) {
             this.url = url;
@@ -137,9 +163,7 @@ public final class DLManager {
                 }
                 synchronized (sTaskDLing){//fix: 如果文件正在取消或异常，这里不能立即重新开始，表现为当多次点击下载时：1. 同时引发多个任务下载；2. 点击无效且无任何返回值；需要进行并发线程的业务处理；
                     // 如果文件正在下载
-//                    DLTask dlTask = sTaskDLing.get(url);
-//                    if (dlTask!=null&&(!dlTask.isStop)) {
-                    if (sTaskDLing.contains(url)) {
+                    if (sTaskDLing.containsKey(url)) {
                         // 文件正在下载 File is downloading
                         if(listener!=null)listener.onError(ERROR_DOWNLOADING);
                     } else {
@@ -148,7 +172,7 @@ public final class DLManager {
                         if (null != listener) listener.onStart(fileName, realUrl);
                         File file = new File(dirPath, fileName);
                         if (null == info || !file.exists()) {
-                            info = new TaskInfo(FileUtil.createFile(dirPath, fileName), url, realUrl, 0, 0);
+                            info = new TaskInfo(FileUtil.createFile(dirPath, fileName), url, realUrl, 0, 0,threadNum);
                         }
                         DLTask task = new DLTask(info, listener);
                         sTaskDLing.put(info.baseUrl, task);
@@ -224,6 +248,9 @@ public final class DLManager {
                         conn = NetUtil.buildConnection(info.realUrl);
                         conn.setRequestProperty("Range", "bytes=" + 0 + "-" + Integer.MAX_VALUE);
                         if (conn.getResponseCode() == HttpStatus.SC_PARTIAL_CONTENT) {
+                            if(isDebug){
+                                Log.d(TAG,"DLTask has 206 ,url:"+info.baseUrl);
+                            }
                             fileLength = conn.getContentLength();
                             if (info.dlLocalFile.exists() && info.dlLocalFile.length() == fileLength) {
                                 isExists = true;
@@ -235,13 +262,19 @@ public final class DLManager {
                                 sDBManager.insertTaskInfo(info);
                                 int threadSize;
                                 int length = LENGTH_PER_THREAD;
-                                if (fileLength <= LENGTH_PER_THREAD) {
-                                    threadSize = 3;
-                                    length = fileLength / threadSize;
-                                } else {
-                                    threadSize = fileLength / LENGTH_PER_THREAD;
-                                }
+//                                if (fileLength <= LENGTH_PER_THREAD) {
+//                                    threadSize = 3;
+//                                    length = fileLength / threadSize;
+//                                } else {
+//                                    threadSize = fileLength / LENGTH_PER_THREAD;
+//                                }
+                                //不建议设定过多线程，根据手机硬件及系统调度特定，最好和cpu核数匹配；
+                                threadSize = info.threadNum;
+                                length = fileLength / threadSize;
                                 int remainder = fileLength % length;
+                                if(isDebug){
+                                    Log.d(TAG,"DLTask has multiThread begin,threadSize:"+threadSize+";prelength:"+length+" ;url:"+info.baseUrl);
+                                }
                                 for (int i = 0; i < threadSize; i++) {
                                     int start = i * length;
                                     int end = start + length - 1;
@@ -256,6 +289,9 @@ public final class DLManager {
                                 }
                             }
                         } else if (conn.getResponseCode() == HttpStatus.SC_OK) {
+                            if(isDebug){
+                                Log.d(TAG,"DLTask has 200 ,url:"+info.baseUrl);
+                            }
                             fileLength = conn.getContentLength();
                             if (info.dlLocalFile.exists() && info.dlLocalFile.length() == fileLength) {
                                 sTaskDLing.remove(info.baseUrl);
@@ -272,6 +308,10 @@ public final class DLManager {
                             sDBManager.updateTaskInfo(info);
                             sTaskDLing.remove(info.baseUrl);
                         }
+                        if(isDebug){
+                            Log.e(TAG, "DLTask running error:"+e+",url:" + info.baseUrl);
+                            e.printStackTrace();
+                        }
                         if (null != mListener) mListener.onError(e.getMessage());
                     } finally {
                         if (conn != null) {
@@ -282,6 +322,9 @@ public final class DLManager {
             }else{
                 //下载失败：网络异常
                 sTaskDLing.remove(info.baseUrl);
+                if(isDebug){
+                    Log.e(TAG,"DLTask no network error ,url:"+info.baseUrl);
+                }
                 if (null != mListener) mListener.onError(ERROR_NO_NETWORK);
             }
         }
@@ -331,6 +374,9 @@ public final class DLManager {
                     raf = new RandomAccessFile(info.dlLocalFile,
                             PublicCons.AccessModes.ACCESS_MODE_RWD);
                     if (conn.getResponseCode() == HttpStatus.SC_PARTIAL_CONTENT) {
+                        if(isDebug){
+                            Log.d(TAG,"DLThread has 206 ,url:"+info.baseUrl);
+                        }
                         if (!isResume) {
                             sDBManager.insertThreadInfo(info);
                         }
@@ -352,6 +398,9 @@ public final class DLManager {
                             sDBManager.updateThreadInfo(info);
                         }
                     } else if (conn.getResponseCode() == HttpStatus.SC_OK) {
+                        if(isDebug){
+                            Log.d(TAG,"DLThread has 200 ,url:"+info.baseUrl);
+                        }
                         is = conn.getInputStream();
                         raf.seek(info.start);
                         byte[] b = new byte[1024];
@@ -365,6 +414,10 @@ public final class DLManager {
                     if (null != sDBManager.queryThreadInfoById(info.id)) {
                         info.start = info.start + progress;
                         sDBManager.updateThreadInfo(info);
+                        if(isDebug){
+                            Log.e(TAG,"DLThread 's running error:"+e);
+                            e.printStackTrace();
+                        }
                     }
                 } finally {
                     try {
@@ -384,4 +437,28 @@ public final class DLManager {
             }
         }
     }
+
+    /**
+     * 调试日志开关，
+     *
+     * tag为 DLManager
+     *
+     * @param debugEnable
+     */
+    public void setDebugEnable(boolean debugEnable){
+        isDebug = debugEnable;
+    }
+
+    //调试日志开关
+
+    private boolean isDebug = false;
+
+    private static final String TAG = DLManager.class.getSimpleName();
+
+    private int defaultThreadNumberSingleTask = 3;
+
+    public void setDefaultThreadNum(int threadNumberSingleTask){
+        this.defaultThreadNumberSingleTask = threadNumberSingleTask;
+    }
+
 }
