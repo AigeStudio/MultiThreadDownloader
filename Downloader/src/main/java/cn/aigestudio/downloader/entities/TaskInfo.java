@@ -12,11 +12,16 @@ import java.io.Serializable;
  * 修改构造方法
  */
 public class TaskInfo extends DLInfo implements Serializable {
-    public int progress, length;
+    public int progress, length,threadNum;
 
     public TaskInfo(File dlLocalFile, String baseUrl, String realUrl, int progress, int length) {
+        this(dlLocalFile, baseUrl, realUrl, progress,length,3);
+    }
+
+    public TaskInfo(File dlLocalFile, String baseUrl, String realUrl, int progress, int length, int threadNum) {
         super(dlLocalFile, baseUrl, realUrl);
         this.progress = progress;
         this.length = length;
+        this.threadNum = threadNum;
     }
 }

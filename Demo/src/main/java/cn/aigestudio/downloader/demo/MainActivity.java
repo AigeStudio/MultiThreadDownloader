@@ -7,6 +7,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
 
+import java.io.File;
+
 import cn.aigestudio.downloader.bizs.DLManager;
 import cn.aigestudio.downloader.interfaces.DLTaskListener;
 
@@ -71,6 +73,12 @@ public class MainActivity extends Activity {
                                 @Override
                                 public void onProgress(int progress) {
                                     pbDLs[finalI].setProgress(progress);
+                                }
+
+                                @Override
+                                public void onFinish(File file) {
+                                    super.onFinish(file);
+                                    pbDLs[finalI].setProgress(100);
                                 }
                             });
                 }
