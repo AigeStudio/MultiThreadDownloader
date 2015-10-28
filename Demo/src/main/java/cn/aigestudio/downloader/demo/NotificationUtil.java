@@ -6,7 +6,6 @@ import android.os.Environment;
 
 /**
  * 通知工具类
- * notify util
  *
  * @author AigeStudio 2015-05-18
  */

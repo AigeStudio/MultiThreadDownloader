@@ -7,20 +7,17 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
 
-import java.io.File;
-
 import cn.aigestudio.downloader.bizs.DLManager;
-import cn.aigestudio.downloader.interfaces.DLTaskListener;
+import cn.aigestudio.downloader.interfaces.SimpleDListener;
 
 public class MainActivity extends Activity {
     private static final String[] URLS = {
-            "http://xiazai.zol.com.cn/down.php?nn=f4afd4327335fd3a1&softid=325408&subcateid=103&site=10&server=10&rand=3331525",
-//            "http://dlsw.baidu.com/sw-search-sp/soft/94/23191/BaiduWubiSetup-1_2_0_13.1401780898.exe",
-            "http://dlsw.baidu.com/sw-search-sp/soft/4f/20605/BaiduType_Setup_Light.1413528566.exe",
-            "http://dlsw.baidu.com/sw-search-sp/soft/4e/16671/freewb10th.322658870.exe",
-            "http://dlsw.baidu.com/sw-search-sp/soft/50/15251/zzbihua_V7.0.7.4_Setup.1422241616.exe",
+            "http://china35.newhua.com/down/FetionNew2015September.zip",
+            "http://www.pc6.com/down.asp?id=72873",
+            "http://download.chinaunix.net/down.php?id=10608&ResourceID=5267&site=1",
+            "http://down.tech.sina.com.cn/download/d_load.php?d_id=49535&down_id=1&ip=42.81.45.159",
             "http://dlsw.baidu.com/sw-search-sp/soft/7b/33461/freeime.1406862029.exe",
-            "http://dlsw.baidu.com/sw-search-sp/soft/46/16696/jpwb2015.2.2.10.1423557071.exe"
+            "http://113.207.16.84/dd.myapp.com/16891/2E53C25B6BC55D3330AB85A1B7B57485.apk?mkey=5630b43973f537cf&f=cf87&fsname=com.htshuo.htsg_3.0.1_49.apk&asr=02f1&p=.apk"
     };
 
     private static final int[] RES_ID_BTN_START = {
@@ -61,6 +58,7 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        DLManager.getInstance(MainActivity.this).setMaxTask(2);
         Button[] btnStarts = new Button[RES_ID_BTN_START.length];
         for (int i = 0; i < btnStarts.length; i++) {
             btnStarts[i] = (Button) findViewById(RES_ID_BTN_START[i]);
@@ -69,16 +67,10 @@ public class MainActivity extends Activity {
                 @Override
                 public void onClick(View v) {
                     DLManager.getInstance(MainActivity.this).dlStart(URLS[finalI], saveDir,
-                            new DLTaskListener() {
+                            new SimpleDListener() {
                                 @Override
                                 public void onProgress(int progress) {
                                     pbDLs[finalI].setProgress(progress);
-                                }
-
-                                @Override
-                                public void onFinish(File file) {
-                                    super.onFinish(file);
-                                    pbDLs[finalI].setProgress(100);
                                 }
                             });
                 }

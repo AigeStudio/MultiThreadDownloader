@@ -4,20 +4,16 @@ import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
 
 import java.io.File;
 
 import cn.aigestudio.downloader.bizs.DLManager;
-import cn.aigestudio.downloader.interfaces.DLTaskListener;
-import cn.aigestudio.downloader.utils.FileUtil;
-import cn.aigestudio.downloader.utils.LogUtil;
+import cn.aigestudio.downloader.interfaces.SimpleDListener;
 
 /**
  * 执行下载的Service
- * Service for download
  *
  * @author AigeStudio 2015-05-18
  */
@@ -31,10 +27,15 @@ public class DLService extends Service {
         final NotificationManager nm = (NotificationManager) getSystemService(Context
                 .NOTIFICATION_SERVICE);
         final NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
-                .setContentTitle(FileUtil.getFileNameFromUrl(url).replace("/", ""))
                 .setSmallIcon(R.drawable.ic_launcher);
 
-        DLManager.getInstance(this).dlStart(url, path, new DLTaskListener() {
+        DLManager.getInstance(this).dlStart(url, path, new SimpleDListener() {
+            @Override
+            public void onStart(String fileName, String realUrl, int fileLength) {
+                super.onStart(fileName, realUrl, fileLength);
+                builder.setContentTitle(fileName);
+            }
+
             @Override
             public void onProgress(int progress) {
                 builder.setProgress(100, progress, false);
@@ -43,7 +44,6 @@ public class DLService extends Service {
 
             @Override
             public void onFinish(File file) {
-                LogUtil.i("onFinish");
                 nm.cancel(id);
             }
         });

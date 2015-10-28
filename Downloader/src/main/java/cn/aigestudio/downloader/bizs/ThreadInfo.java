@@ -1,4 +1,4 @@
-package cn.aigestudio.downloader.entities;
+package cn.aigestudio.downloader.bizs;
 
 import java.io.File;
 import java.io.Serializable;
@@ -11,11 +11,11 @@ import java.io.Serializable;
  * @author AigeStudio 2015-05-29
  *         修改构造方法
  */
-public class ThreadInfo extends DLInfo implements Serializable {
-    public String id;
-    public int start, end;
+class ThreadInfo extends DLInfo implements Serializable {
+    String id;
+    int start, end;
 
-    public ThreadInfo(File dlLocalFile, String baseUrl, String realUrl, int start, int end, String id) {
+    ThreadInfo(File dlLocalFile, String baseUrl, String realUrl, int start, int end, String id) {
         super(dlLocalFile, baseUrl, realUrl);
         this.start = start;
         this.end = end;

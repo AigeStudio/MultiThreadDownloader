@@ -4,11 +4,6 @@ import android.content.Context;
 
 import java.util.List;
 
-import cn.aigestudio.downloader.daos.TaskDAO;
-import cn.aigestudio.downloader.daos.ThreadDAO;
-import cn.aigestudio.downloader.entities.TaskInfo;
-import cn.aigestudio.downloader.entities.ThreadInfo;
-
 /**
  * 数据库管理器
  * 封装各种业务数据操作
@@ -16,8 +11,8 @@ import cn.aigestudio.downloader.entities.ThreadInfo;
  *
  * @author AigeStudio 2015-05-09
  */
-public final class DBManager {
-    private static DBManager sManager = null;
+ final class DBManager {
+    private static DBManager sManager;
 
     private TaskDAO daoTask;
     private ThreadDAO daoThread;
@@ -33,7 +28,7 @@ public final class DBManager {
      * @param context ...
      * @return 数据库管理器单例对象
      */
-    public static DBManager getInstance(Context context) {
+     static DBManager getInstance(Context context) {
         if (null == sManager) {
             sManager = new DBManager(context);
         }
@@ -45,7 +40,7 @@ public final class DBManager {
      *
      * @param info 下载任务对象
      */
-    public synchronized void insertTaskInfo(TaskInfo info) {
+     synchronized void insertTaskInfo(TaskInfo info) {
         daoTask.insertInfo(info);
     }
 
@@ -54,7 +49,7 @@ public final class DBManager {
      *
      * @param url 下载地址
      */
-    public synchronized void deleteTaskInfo(String url) {
+     synchronized void deleteTaskInfo(String url) {
         daoTask.deleteInfo(url);
     }
 
@@ -63,7 +58,7 @@ public final class DBManager {
      *
      * @param info 下载任务对象
      */
-    public synchronized void updateTaskInfo(TaskInfo info) {
+     synchronized void updateTaskInfo(TaskInfo info) {
         daoTask.updateInfo(info);
     }
 
@@ -73,7 +68,7 @@ public final class DBManager {
      * @param url 下载地址
      * @return 下载任务对象
      */
-    public synchronized TaskInfo queryTaskInfoByUrl(String url) {
+     synchronized TaskInfo queryTaskInfoByUrl(String url) {
         return (TaskInfo) daoTask.queryInfo(url);
     }
 
@@ -82,7 +77,7 @@ public final class DBManager {
      *
      * @param info 线程对象
      */
-    public synchronized void insertThreadInfo(ThreadInfo info) {
+     synchronized void insertThreadInfo(ThreadInfo info) {
         daoThread.insertInfo(info);
     }
 
@@ -91,7 +86,7 @@ public final class DBManager {
      *
      * @param id 线程ID
      */
-    public synchronized void deleteThreadInfoById(String id) {
+     synchronized void deleteThreadInfoById(String id) {
         daoThread.deleteInfo(id);
     }
 
@@ -100,7 +95,7 @@ public final class DBManager {
      *
      * @param url 下载地址
      */
-    public synchronized void deleteThreadInfos(String url) {
+     synchronized void deleteThreadInfos(String url) {
         daoThread.deleteInfo(url);
     }
 
@@ -109,7 +104,7 @@ public final class DBManager {
      *
      * @param info 线程对象
      */
-    public synchronized void updateThreadInfo(ThreadInfo info) {
+     synchronized void updateThreadInfo(ThreadInfo info) {
         daoThread.updateInfo(info);
     }
 
@@ -119,7 +114,7 @@ public final class DBManager {
      * @param id 线程ID
      * @return 线程对象
      */
-    public synchronized ThreadInfo queryThreadInfoById(String id) {
+     synchronized ThreadInfo queryThreadInfoById(String id) {
         return (ThreadInfo) daoThread.queryInfo(id);
     }
 
@@ -129,14 +124,7 @@ public final class DBManager {
      * @param url 下载地址
      * @return 所有该地址下对应的线程信息
      */
-    public synchronized List<ThreadInfo> queryThreadInfos(String url) {
+     synchronized List<ThreadInfo> queryThreadInfos(String url) {
         return daoThread.queryInfos(url);
-    }
-
-    /**
-     * 释放资源 暂无用
-     */
-    public void release() {
-        daoTask.close();
     }
 }

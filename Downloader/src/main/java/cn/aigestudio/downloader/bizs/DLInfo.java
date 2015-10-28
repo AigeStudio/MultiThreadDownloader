@@ -1,4 +1,4 @@
-package cn.aigestudio.downloader.entities;
+package cn.aigestudio.downloader.bizs;
 
 import java.io.File;
 import java.io.Serializable;
@@ -9,11 +9,11 @@ import java.io.Serializable;
  *
  * @author AigeStudio 2015-05-16
  */
-public class DLInfo implements Serializable {
-    public File dlLocalFile;
-    public String baseUrl, realUrl;
+class DLInfo implements Serializable {
+    File dlLocalFile;
+    String baseUrl, realUrl;
 
-    public DLInfo(File dlLocalFile, String baseUrl, String realUrl) {
+    DLInfo(File dlLocalFile, String baseUrl, String realUrl) {
         this.dlLocalFile = dlLocalFile;
         this.baseUrl = baseUrl;
         this.realUrl = realUrl;
