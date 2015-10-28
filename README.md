@@ -22,6 +22,9 @@
 * 修复域名重定向后不能进行多线程下载的问题
 * 修复域名重定向后不能停止下载任务的问题
 
+###1.4.0 release
+* 修复已知Bug
+
 ##预览图
 **在普通界面中下载**
 
@@ -39,7 +42,8 @@
 ##如何集成到项目
 ###方式一 直接从maven center compile
 ```java
-compile 'cn.aigestudio.downloader:Downloader:1.3.7'
+~~compile 'cn.aigestudio.downloader:Downloader:1.3.7'~~
+~~compile 'cn.aigestudio.downloader:Downloader:1.4.0'~~
 ```
 
 ###方式二 自己动手
@@ -131,6 +135,9 @@ Easy and useful downloader for Android
 ###1.3.7 release
 * Bugfix:can not start multi-threads to download file when we in url redirection.
 * Bugfix:can not stop a download task when we in url redirection.
+
+###1.4.0 release
+* Fix known bug.
 
 ##Preview
 **Download in activity**
