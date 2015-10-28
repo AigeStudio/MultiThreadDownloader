@@ -41,9 +41,9 @@
 
 ##如何集成到项目
 ###方式一 直接从maven center compile
-```java
 ~~compile 'cn.aigestudio.downloader:Downloader:1.3.7'~~
-~~compile 'cn.aigestudio.downloader:Downloader:1.4.0'~~
+```java
+compile 'cn.aigestudio.downloader:Downloader:1.4.0'
 ```
 
 ###方式二 自己动手
