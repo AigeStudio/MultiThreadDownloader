@@ -1,0 +1,184 @@
+package cn.aigestudio.downloader.bizs;
+
+
+import android.content.Context;
+import android.os.Process;
+import android.text.TextUtils;
+import android.util.Log;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.UUID;
+
+import static cn.aigestudio.downloader.bizs.DLCons.Base.DEFAULT_TIMEOUT;
+import static cn.aigestudio.downloader.bizs.DLCons.Base.LENGTH_PER_THREAD;
+import static cn.aigestudio.downloader.bizs.DLCons.Base.MAX_REDIRECTS;
+import static cn.aigestudio.downloader.bizs.DLCons.Code.HTTP_MOVED_PERM;
+import static cn.aigestudio.downloader.bizs.DLCons.Code.HTTP_MOVED_TEMP;
+import static cn.aigestudio.downloader.bizs.DLCons.Code.HTTP_NOT_MODIFIED;
+import static cn.aigestudio.downloader.bizs.DLCons.Code.HTTP_OK;
+import static cn.aigestudio.downloader.bizs.DLCons.Code.HTTP_PARTIAL;
+import static cn.aigestudio.downloader.bizs.DLCons.Code.HTTP_SEE_OTHER;
+import static cn.aigestudio.downloader.bizs.DLCons.Code.HTTP_TEMP_REDIRECT;
+
+class DLTask implements Runnable, IDLThreadListener {
+    private static final String TAG = DLTask.class.getSimpleName();
+
+    private DLInfo info;
+    private Context context;
+
+    private int totalProgress;
+
+    DLTask(Context context, DLInfo info) {
+        this.info = info;
+        this.context = context;
+    }
+
+
+    @Override
+    public synchronized void onProgress(int progress) {
+        totalProgress += progress;
+        Log.d(TAG, totalProgress + "");
+    }
+
+    @Override
+    public void run() {
+        Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
+
+        while (info.redirect < MAX_REDIRECTS) {
+            HttpURLConnection conn = null;
+            try {
+                conn = (HttpURLConnection) new URL(info.realUrl).openConnection();
+                conn.setInstanceFollowRedirects(false);
+                conn.setConnectTimeout(DEFAULT_TIMEOUT);
+                conn.setReadTimeout(DEFAULT_TIMEOUT);
+
+                addRequestHeaders(conn);
+
+                final int code = conn.getResponseCode();
+                switch (code) {
+                    case HTTP_OK:
+                    case HTTP_PARTIAL:
+                        dlInit(conn, code);
+                        return;
+                    case HTTP_MOVED_PERM:
+                    case HTTP_MOVED_TEMP:
+                    case HTTP_SEE_OTHER:
+                    case HTTP_NOT_MODIFIED:
+                    case HTTP_TEMP_REDIRECT:
+                        final String location = conn.getHeaderField("location");
+                        if (TextUtils.isEmpty(location))
+                            throw new RuntimeException(
+                                    "Can not obtain real url from location in header.");
+                        info.realUrl = location;
+                        continue;
+                    default:
+                        return;
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                if (null != conn) conn.disconnect();
+            }
+        }
+        throw new RuntimeException("Too many redirects");
+    }
+
+    private void dlInit(HttpURLConnection conn, int code) {
+        readResponseHeaders(conn);
+        if (!DLUtil.createFile(info.dirPath, info.fileName))
+            throw new RuntimeException("Can not create file");
+        info.file = new File(info.dirPath, info.fileName);
+        switch (code) {
+            case HTTP_OK:
+                dlData(conn);
+                break;
+            case HTTP_PARTIAL:
+                if (info.totalBytes <= 0) {
+                    dlData(conn);
+                    break;
+                }
+                dlDispatch();
+                break;
+        }
+    }
+
+    private void dlDispatch() {
+        int threadSize;
+        int threadLength = LENGTH_PER_THREAD;
+        if (info.totalBytes <= LENGTH_PER_THREAD) {
+            threadSize = 2;
+            threadLength = info.totalBytes / threadSize;
+        } else {
+            threadSize = info.totalBytes / LENGTH_PER_THREAD;
+        }
+        int remainder = info.totalBytes % threadLength;
+        for (int i = 0; i < threadSize; i++) {
+            int start = i * threadLength;
+            int end = start + threadLength - 1;
+            if (i == threadSize - 1) {
+                end = start + threadLength + remainder;
+            }
+            DLManager.addDLThread(new DLThread(new DLThreadInfo(UUID.randomUUID().toString(),
+                    start, end), info, this));
+        }
+    }
+
+    private void dlData(HttpURLConnection conn) {
+        InputStream is = null;
+        FileOutputStream fos = null;
+        try {
+            is = conn.getInputStream();
+            fos = new FileOutputStream(info.file);
+            byte[] b = new byte[4096];
+            int len;
+            int count = 0;
+            while ((len = is.read(b)) != -1) {
+                count += len;
+                Log.d(TAG, count + "");
+                fos.write(b, 0, len);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (null != fos) fos.close();
+                if (null != is) is.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void addRequestHeaders(HttpURLConnection conn) {
+        for (DLHeader header : info.requestHeaders) {
+            conn.addRequestProperty(header.key, header.value);
+        }
+    }
+
+    private void readResponseHeaders(HttpURLConnection conn) {
+        info.disposition = conn.getHeaderField("Content-Disposition");
+        info.location = conn.getHeaderField("Content-Location");
+        info.mimeType = DLUtil.normalizeMimeType(conn.getContentType());
+        final String transferEncoding = conn.getHeaderField("Transfer-Encoding");
+        if (TextUtils.isEmpty(transferEncoding)) {
+            try {
+                info.totalBytes = Integer.parseInt(conn.getHeaderField("Content-Length"));
+            } catch (NumberFormatException e) {
+                info.totalBytes = -1;
+            }
+        } else {
+            info.totalBytes = -1;
+        }
+        if (info.totalBytes == -1 && (TextUtils.isEmpty(transferEncoding) ||
+                !transferEncoding.equalsIgnoreCase("chunked")))
+            throw new RuntimeException("Can not obtain size of download file.");
+        if (TextUtils.isEmpty(info.fileName)) {
+            info.fileName = DLUtil.obtainFileName(info.realUrl, info.disposition, info.location);
+        }
+    }
+}

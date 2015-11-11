@@ -1,7 +1,11 @@
 package cn.aigestudio.downloader.bizs;
 
 import java.io.File;
-import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import cn.aigestudio.downloader.interfaces.IDListener;
 
 /**
  * 下载实体类
@@ -9,13 +13,39 @@ import java.io.Serializable;
  *
  * @author AigeStudio 2015-05-16
  */
-class DLInfo implements Serializable {
-    File dlLocalFile;
-    String baseUrl, realUrl;
+class DLInfo {
+    int redirect;
+    int totalBytes;
+    int currentBytes;
+    boolean hasListener;
+    String id;
+    String fileName;
+    String dirPath;
+    String baseUrl;
+    String realUrl;
+    String mimeType;
+    String eTag;
+    String disposition;
+    String location;
+    List<DLHeader> requestHeaders;
+    final List<String> threads;
+    IDListener listener;
+    File file;
 
-    DLInfo(File dlLocalFile, String baseUrl, String realUrl) {
-        this.dlLocalFile = dlLocalFile;
-        this.baseUrl = baseUrl;
-        this.realUrl = realUrl;
+    DLInfo() {
+        id = UUID.randomUUID().toString();
+        threads = new ArrayList<>();
+    }
+
+    void addDLThread(String id) {
+        synchronized (threads) {
+            threads.add(id);
+        }
+    }
+
+    void removeDLThread(String id) {
+        synchronized (threads) {
+            threads.remove(id);
+        }
     }
 }
