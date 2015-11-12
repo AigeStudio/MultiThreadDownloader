@@ -18,6 +18,7 @@ class DLInfo {
     int totalBytes;
     int currentBytes;
     boolean hasListener;
+    boolean isResume;
     String id;
     String fileName;
     String dirPath;
@@ -28,7 +29,7 @@ class DLInfo {
     String disposition;
     String location;
     List<DLHeader> requestHeaders;
-    final List<String> threads;
+    final List<DLThreadInfo> threads;
     IDListener listener;
     File file;
 
@@ -37,15 +38,15 @@ class DLInfo {
         threads = new ArrayList<>();
     }
 
-    void addDLThread(String id) {
+    void addDLThread(DLThreadInfo info) {
         synchronized (threads) {
-            threads.add(id);
+            threads.add(info);
         }
     }
 
-    void removeDLThread(String id) {
+    void removeDLThread(DLThreadInfo info) {
         synchronized (threads) {
-            threads.remove(id);
+            threads.remove(info);
         }
     }
 }

@@ -3,9 +3,7 @@ package cn.aigestudio.downloader.bizs;
 class DLThreadInfo {
     String id;
     int start, end;
-
-    DLThreadInfo() {
-    }
+    boolean isStop;
 
     DLThreadInfo(String id, int start, int end) {
         this.id = id;

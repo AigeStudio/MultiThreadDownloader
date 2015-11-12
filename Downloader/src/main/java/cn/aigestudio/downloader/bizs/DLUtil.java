@@ -1,5 +1,8 @@
 package cn.aigestudio.downloader.bizs;
 
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.text.TextUtils;
@@ -184,5 +187,17 @@ final class DLUtil {
             e.printStackTrace();
         }
         return hasFile;
+    }
+
+    static boolean isNetworkAvailable(Context context) {
+        try {
+            ConnectivityManager cm =
+                    (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            NetworkInfo info = cm.getActiveNetworkInfo();
+            return null != info && info.isConnected();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 }

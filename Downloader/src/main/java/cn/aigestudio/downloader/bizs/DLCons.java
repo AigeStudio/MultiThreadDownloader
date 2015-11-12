@@ -1,8 +1,12 @@
 package cn.aigestudio.downloader.bizs;
 
+import android.provider.BaseColumns;
+
 final class DLCons {
     private DLCons() {
     }
+
+    static boolean DEBUG = true;
 
     static final class Base {
         static final int DEFAULT_TIMEOUT = 20000;
@@ -61,5 +65,50 @@ final class DLCons {
         static final int HTTP_GATEWAY_TIMEOUT = 504;
         static final int HTTP_VERSION = 505;
         static final int HTTP_INSUFFICIENT_STORAGE = 507;
+    }
+
+    static final class DBCons {
+        static final String TB_TASK = "task_info";
+        static final String TB_TASK_URL_BASE = "base_url";
+        static final String TB_TASK_URL_REAL = "real_url";
+        static final String TB_TASK_FILE_PATH = "file_path";
+        static final String TB_TASK_CURRENT_BYTES = "currentBytes";
+        static final String TB_TASK_TOTAL_BYTES = "totalBytes";
+        static final String TB_TASK_FILE_NAME = "file_name";
+        static final String TB_TASK_MIME_TYPE = "mime_type";
+        static final String TB_TASK_ETAG = "e_tag";
+        static final String TB_TASK_DISPOSITION = "disposition";
+        static final String TB_TASK_LOCATION = "location";
+
+        static final String TB_THREAD = "thread_info";
+        static final String TB_THREAD_URL_BASE = "base_url";
+//        static final String TB_THREAD_URL_REAL = "real_url";
+//        static final String TB_THREAD_FILE_PATH = "file_path";
+        static final String TB_THREAD_START = "start";
+        static final String TB_THREAD_END = "end";
+        static final String TB_THREAD_ID = "id";
+
+        static final String TB_TASK_SQL_CREATE = "CREATE TABLE " +
+                DLCons.DBCons.TB_TASK + "(" +
+                BaseColumns._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                DLCons.DBCons.TB_TASK_URL_BASE + " CHAR, " +
+                DLCons.DBCons.TB_TASK_URL_REAL + " CHAR, " +
+                DLCons.DBCons.TB_TASK_FILE_PATH + " CHAR, " +
+                DLCons.DBCons.TB_TASK_CURRENT_BYTES + " INTEGER, " +
+                DLCons.DBCons.TB_TASK_TOTAL_BYTES + " INTEGER)";
+        static final String TB_THREAD_SQL_CREATE = "CREATE TABLE " +
+                DLCons.DBCons.TB_THREAD + "(" +
+                BaseColumns._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                DLCons.DBCons.TB_THREAD_URL_BASE + " CHAR, " +
+//                DLCons.DBCons.TB_THREAD_URL_REAL + " CHAR, " +
+//                DLCons.DBCons.TB_THREAD_FILE_PATH + " CHAR, " +
+                DLCons.DBCons.TB_THREAD_START + " INTEGER, " +
+                DLCons.DBCons.TB_THREAD_END + " INTEGER, " +
+                DLCons.DBCons.TB_THREAD_ID + " CHAR)";
+
+        static final String TB_TASK_SQL_UPGRADE = "DROP TABLE IF EXISTS " +
+                DLCons.DBCons.TB_TASK;
+        static final String TB_THREAD_SQL_UPGRADE = "DROP TABLE IF EXISTS " +
+                DLCons.DBCons.TB_THREAD;
     }
 }

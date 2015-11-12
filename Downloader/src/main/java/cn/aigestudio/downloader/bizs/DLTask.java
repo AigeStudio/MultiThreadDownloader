@@ -24,6 +24,7 @@ import static cn.aigestudio.downloader.bizs.DLCons.Code.HTTP_OK;
 import static cn.aigestudio.downloader.bizs.DLCons.Code.HTTP_PARTIAL;
 import static cn.aigestudio.downloader.bizs.DLCons.Code.HTTP_SEE_OTHER;
 import static cn.aigestudio.downloader.bizs.DLCons.Code.HTTP_TEMP_REDIRECT;
+import static cn.aigestudio.downloader.bizs.DLError.ERROR_OPEN_CONNECT;
 
 class DLTask implements Runnable, IDLThreadListener {
     private static final String TAG = DLTask.class.getSimpleName();
@@ -36,8 +37,9 @@ class DLTask implements Runnable, IDLThreadListener {
     DLTask(Context context, DLInfo info) {
         this.info = info;
         this.context = context;
+        this.totalProgress = info.currentBytes;
+        if (!info.isResume) DLDBManager.getInstance(context).insertTaskInfo(info);
     }
-
 
     @Override
     public synchronized void onProgress(int progress) {
@@ -48,7 +50,6 @@ class DLTask implements Runnable, IDLThreadListener {
     @Override
     public void run() {
         Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
-
         while (info.redirect < MAX_REDIRECTS) {
             HttpURLConnection conn = null;
             try {
@@ -72,15 +73,19 @@ class DLTask implements Runnable, IDLThreadListener {
                     case HTTP_TEMP_REDIRECT:
                         final String location = conn.getHeaderField("location");
                         if (TextUtils.isEmpty(location))
-                            throw new RuntimeException(
+                            throw new DLException(
                                     "Can not obtain real url from location in header.");
                         info.realUrl = location;
                         continue;
                     default:
+                        if (info.hasListener)
+                            info.listener.onError(code, conn.getResponseMessage());
+                        DLManager.getInstance(context).removeDL(info.baseUrl);
                         return;
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
+            } catch (Exception e) {
+                if (info.hasListener) info.listener.onError(ERROR_OPEN_CONNECT, e.toString());
+                DLManager.getInstance(context).removeDL(info.baseUrl);
             } finally {
                 if (null != conn) conn.disconnect();
             }
@@ -88,10 +93,10 @@ class DLTask implements Runnable, IDLThreadListener {
         throw new RuntimeException("Too many redirects");
     }
 
-    private void dlInit(HttpURLConnection conn, int code) {
+    private void dlInit(HttpURLConnection conn, int code) throws Exception {
         readResponseHeaders(conn);
         if (!DLUtil.createFile(info.dirPath, info.fileName))
-            throw new RuntimeException("Can not create file");
+            throw new DLException("Can not create file");
         info.file = new File(info.dirPath, info.fileName);
         switch (code) {
             case HTTP_OK:
@@ -123,35 +128,24 @@ class DLTask implements Runnable, IDLThreadListener {
             if (i == threadSize - 1) {
                 end = start + threadLength + remainder;
             }
-            DLManager.addDLThread(new DLThread(new DLThreadInfo(UUID.randomUUID().toString(),
-                    start, end), info, this));
+            DLManager.getInstance(context).addDLThread(new DLThread(
+                    new DLThreadInfo(UUID.randomUUID().toString(), start, end), info, this));
         }
     }
 
-    private void dlData(HttpURLConnection conn) {
-        InputStream is = null;
-        FileOutputStream fos = null;
-        try {
-            is = conn.getInputStream();
-            fos = new FileOutputStream(info.file);
-            byte[] b = new byte[4096];
-            int len;
-            int count = 0;
-            while ((len = is.read(b)) != -1) {
-                count += len;
-                Log.d(TAG, count + "");
-                fos.write(b, 0, len);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if (null != fos) fos.close();
-                if (null != is) is.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+    private void dlData(HttpURLConnection conn) throws IOException {
+        InputStream is = conn.getInputStream();
+        FileOutputStream fos = new FileOutputStream(info.file);
+        byte[] b = new byte[4096];
+        int len;
+        int count = 0;
+        while ((len = is.read(b)) != -1) {
+            count += len;
+            Log.d(TAG, count + "");
+            fos.write(b, 0, len);
         }
+        fos.close();
+        is.close();
     }
 
     private void addRequestHeaders(HttpURLConnection conn) {
@@ -177,8 +171,7 @@ class DLTask implements Runnable, IDLThreadListener {
         if (info.totalBytes == -1 && (TextUtils.isEmpty(transferEncoding) ||
                 !transferEncoding.equalsIgnoreCase("chunked")))
             throw new RuntimeException("Can not obtain size of download file.");
-        if (TextUtils.isEmpty(info.fileName)) {
+        if (TextUtils.isEmpty(info.fileName))
             info.fileName = DLUtil.obtainFileName(info.realUrl, info.disposition, info.location);
-        }
     }
 }

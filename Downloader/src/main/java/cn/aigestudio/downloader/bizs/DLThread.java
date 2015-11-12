@@ -20,7 +20,7 @@ class DLThread implements Runnable {
         this.listener = listener;
         this.dlInfo = dlInfo;
 
-        dlInfo.addDLThread(dlThreadInfo.id);
+        dlInfo.addDLThread(dlThreadInfo);
         // TODO 插入数据库
     }
 
