@@ -3,11 +3,11 @@ package cn.aigestudio.downloader.bizs;
 import java.util.List;
 
 interface IThreadDAO {
-    void insertThreadInfo(DLThread info);
+    void insertThreadInfo(DLThreadInfo info);
 
     void deleteThreadInfo(String url);
 
-    void updateThreadInfo(DLThread info);
+    void updateThreadInfo(DLThreadInfo info);
 
     DLThread queryThreadInfo(String id);
 

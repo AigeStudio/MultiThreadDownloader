@@ -63,7 +63,7 @@ public final class DLManager {
             DLInfo info;
             if (TASK_STOPPED.containsKey(url)) {
                 if (DEBUG) Log.d(TAG, "Resume task from memory.");
-                info = TASK_STOPPED.get(url);
+                info = TASK_STOPPED.remove(url);
             } else {
                 if (DEBUG) Log.d(TAG, "Resume task from database.");
                 info = DLDBManager.getInstance(context).queryTaskInfo(url);
@@ -78,7 +78,11 @@ public final class DLManager {
                 info.fileName = name;
             } else {
                 info.isResume = true;
+                for (DLThreadInfo threadInfo : info.threads) {
+                    threadInfo.isStop = false;
+                }
             }
+            info.redirect = 0;
             info.requestHeaders = DLUtil.initRequestHeaders(headers, info);
             info.listener = listener;
             info.hasListener = hasListener;
@@ -94,17 +98,37 @@ public final class DLManager {
         }
     }
 
-    synchronized void removeDL(String url) {
-        TASK_DLING.remove(url);
-    }
-
-    synchronized void addDLTask() {
-        if (!TASK_PREPARE.isEmpty()) {
-            POOL_TASK.execute(new DLTask(context, TASK_PREPARE.remove(0)));
+    public void dlStop(String url) {
+        if (TASK_DLING.containsKey(url)) {
+            DLInfo info = TASK_DLING.get(url);
+            if (!info.threads.isEmpty()) {
+                for (DLThreadInfo threadInfo : info.threads) {
+                    threadInfo.isStop = true;
+                }
+            }
         }
     }
 
-    synchronized void addDLThread(DLThread thread) {
-        POOL_Thread.execute(thread);
+    synchronized DLManager removeDLTask(String url) {
+        TASK_DLING.remove(url);
+        return sManager;
     }
+
+    synchronized DLManager addDLTask() {
+        if (!TASK_PREPARE.isEmpty()) {
+            POOL_TASK.execute(new DLTask(context, TASK_PREPARE.remove(0)));
+        }
+        return sManager;
+    }
+
+    synchronized DLManager addStopTask(DLInfo info) {
+        TASK_STOPPED.put(info.baseUrl, info);
+        return sManager;
+    }
+
+    synchronized DLManager addDLThread(DLThread thread) {
+        POOL_Thread.execute(thread);
+        return sManager;
+    }
+
 }

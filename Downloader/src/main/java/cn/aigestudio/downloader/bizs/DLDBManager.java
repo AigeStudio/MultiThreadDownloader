@@ -43,7 +43,7 @@ final class DLDBManager implements ITaskDAO, IThreadDAO {
     }
 
     @Override
-    public synchronized void insertThreadInfo(DLThread info) {
+    public synchronized void insertThreadInfo(DLThreadInfo info) {
 
     }
 
@@ -53,7 +53,7 @@ final class DLDBManager implements ITaskDAO, IThreadDAO {
     }
 
     @Override
-    public synchronized void updateThreadInfo(DLThread info) {
+    public synchronized void updateThreadInfo(DLThreadInfo info) {
 
     }
 

@@ -12,7 +12,7 @@ class ThreadDAO implements IThreadDAO {
     }
 
     @Override
-    public void insertThreadInfo(DLThread info) {
+    public void insertThreadInfo(DLThreadInfo info) {
 
     }
 
@@ -22,7 +22,7 @@ class ThreadDAO implements IThreadDAO {
     }
 
     @Override
-    public void updateThreadInfo(DLThread info) {
+    public void updateThreadInfo(DLThreadInfo info) {
 
     }
 

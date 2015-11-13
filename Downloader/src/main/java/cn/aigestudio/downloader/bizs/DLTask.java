@@ -33,6 +33,7 @@ class DLTask implements Runnable, IDLThreadListener {
     private Context context;
 
     private int totalProgress;
+    private int count;
 
     DLTask(Context context, DLInfo info) {
         this.info = info;
@@ -44,7 +45,29 @@ class DLTask implements Runnable, IDLThreadListener {
     @Override
     public synchronized void onProgress(int progress) {
         totalProgress += progress;
-        Log.d(TAG, totalProgress + "");
+//        Log.d(TAG, totalProgress + "");
+    }
+
+    @Override
+    public synchronized void onStop() {
+        count++;
+        if (count >= info.threads.size()) {
+            Log.d(TAG, "All the threads was stopped.");
+            info.currentBytes = totalProgress;
+            DLManager.getInstance(context).addStopTask(info).removeDLTask(info.baseUrl);
+            DLDBManager.getInstance(context).updateTaskInfo(info);
+            count = 0;
+        }
+    }
+
+    @Override
+    public synchronized void onFinish(DLThreadInfo threadInfo) {
+        info.removeDLThread(threadInfo);
+        Log.d(TAG, "Thread size " + info.threads.size());
+        if (info.threads.isEmpty()) {
+            Log.d(TAG, "Task was finished.");
+            DLManager.getInstance(context).removeDLTask(info.baseUrl);
+        }
     }
 
     @Override
@@ -76,16 +99,18 @@ class DLTask implements Runnable, IDLThreadListener {
                             throw new DLException(
                                     "Can not obtain real url from location in header.");
                         info.realUrl = location;
+                        info.redirect++;
                         continue;
                     default:
                         if (info.hasListener)
                             info.listener.onError(code, conn.getResponseMessage());
-                        DLManager.getInstance(context).removeDL(info.baseUrl);
+                        DLManager.getInstance(context).removeDLTask(info.baseUrl);
                         return;
                 }
             } catch (Exception e) {
                 if (info.hasListener) info.listener.onError(ERROR_OPEN_CONNECT, e.toString());
-                DLManager.getInstance(context).removeDL(info.baseUrl);
+                DLManager.getInstance(context).removeDLTask(info.baseUrl);
+                return;
             } finally {
                 if (null != conn) conn.disconnect();
             }
@@ -95,6 +120,7 @@ class DLTask implements Runnable, IDLThreadListener {
 
     private void dlInit(HttpURLConnection conn, int code) throws Exception {
         readResponseHeaders(conn);
+        DLDBManager.getInstance(context).updateTaskInfo(info);
         if (!DLUtil.createFile(info.dirPath, info.fileName))
             throw new DLException("Can not create file");
         info.file = new File(info.dirPath, info.fileName);
@@ -105,6 +131,13 @@ class DLTask implements Runnable, IDLThreadListener {
             case HTTP_PARTIAL:
                 if (info.totalBytes <= 0) {
                     dlData(conn);
+                    break;
+                }
+                if (info.isResume) {
+                    for (DLThreadInfo threadInfo : info.threads) {
+                        DLManager.getInstance(context)
+                                .addDLThread(new DLThread(threadInfo, info, this));
+                    }
                     break;
                 }
                 dlDispatch();
@@ -128,8 +161,10 @@ class DLTask implements Runnable, IDLThreadListener {
             if (i == threadSize - 1) {
                 end = start + threadLength + remainder;
             }
-            DLManager.getInstance(context).addDLThread(new DLThread(
-                    new DLThreadInfo(UUID.randomUUID().toString(), start, end), info, this));
+            DLThreadInfo threadInfo = new DLThreadInfo(UUID.randomUUID().toString(), start, end);
+            info.addDLThread(threadInfo);
+            DLDBManager.getInstance(context).insertThreadInfo(threadInfo);
+            DLManager.getInstance(context).addDLThread(new DLThread(threadInfo, info, this));
         }
     }
 

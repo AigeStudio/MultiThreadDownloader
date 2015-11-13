@@ -38,15 +38,11 @@ class DLInfo {
         threads = new ArrayList<>();
     }
 
-    void addDLThread(DLThreadInfo info) {
-        synchronized (threads) {
-            threads.add(info);
-        }
+    synchronized void addDLThread(DLThreadInfo info) {
+        threads.add(info);
     }
 
-    void removeDLThread(DLThreadInfo info) {
-        synchronized (threads) {
-            threads.remove(info);
-        }
+    synchronized void removeDLThread(DLThreadInfo info) {
+        threads.remove(info);
     }
 }

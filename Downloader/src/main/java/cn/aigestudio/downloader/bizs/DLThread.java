@@ -1,6 +1,7 @@
 package cn.aigestudio.downloader.bizs;
 
 import android.os.Process;
+import android.util.Log;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,6 +12,8 @@ import java.net.URL;
 import static cn.aigestudio.downloader.bizs.DLCons.Base.DEFAULT_TIMEOUT;
 
 class DLThread implements Runnable {
+    private static final String TAG = DLThread.class.getSimpleName();
+
     private DLThreadInfo dlThreadInfo;
     private DLInfo dlInfo;
     private IDLThreadListener listener;
@@ -19,9 +22,6 @@ class DLThread implements Runnable {
         this.dlThreadInfo = dlThreadInfo;
         this.listener = listener;
         this.dlInfo = dlInfo;
-
-        dlInfo.addDLThread(dlThreadInfo);
-        // TODO 插入数据库
     }
 
     @Override
@@ -45,9 +45,17 @@ class DLThread implements Runnable {
 
             byte[] b = new byte[4096];
             int len;
-            while ((len = is.read(b)) != -1) {
+            while (!dlThreadInfo.isStop && (len = is.read(b)) != -1) {
+                dlThreadInfo.start += len;
                 raf.write(b, 0, len);
                 listener.onProgress(len);
+            }
+            if (dlThreadInfo.isStop) {
+                Log.d(TAG, "Thread " + dlThreadInfo.id + " will be stopped.");
+                listener.onStop();
+            } else {
+                Log.d(TAG, "Thread " + dlThreadInfo.id + " will be finished.");
+                listener.onFinish(dlThreadInfo);
             }
         } catch (IOException e) {
             e.printStackTrace();
