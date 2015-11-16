@@ -34,6 +34,7 @@ class DLTask implements Runnable, IDLThreadListener {
 
     private int totalProgress;
     private int count;
+    private long lastTime = System.currentTimeMillis();
 
     DLTask(Context context, DLInfo info) {
         this.info = info;
@@ -45,11 +46,17 @@ class DLTask implements Runnable, IDLThreadListener {
     @Override
     public synchronized void onProgress(int progress) {
         totalProgress += progress;
-//        Log.d(TAG, totalProgress + "");
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastTime > 1000) {
+            Log.d(TAG, totalProgress + "");
+            if (info.hasListener) info.listener.onProgress(totalProgress);
+            lastTime = currentTime;
+        }
     }
 
     @Override
-    public synchronized void onStop() {
+    public synchronized void onStop(DLThreadInfo threadInfo) {
+        DLDBManager.getInstance(context).updateThreadInfo(threadInfo);
         count++;
         if (count >= info.threads.size()) {
             Log.d(TAG, "All the threads was stopped.");
@@ -57,16 +64,24 @@ class DLTask implements Runnable, IDLThreadListener {
             DLManager.getInstance(context).addStopTask(info).removeDLTask(info.baseUrl);
             DLDBManager.getInstance(context).updateTaskInfo(info);
             count = 0;
+            if (info.hasListener) info.listener.onStop(totalProgress);
         }
     }
 
     @Override
     public synchronized void onFinish(DLThreadInfo threadInfo) {
         info.removeDLThread(threadInfo);
+        DLDBManager.getInstance(context).deleteThreadInfo(threadInfo.id);
         Log.d(TAG, "Thread size " + info.threads.size());
         if (info.threads.isEmpty()) {
             Log.d(TAG, "Task was finished.");
             DLManager.getInstance(context).removeDLTask(info.baseUrl);
+            DLDBManager.getInstance(context).deleteTaskInfo(info.baseUrl);
+            if (info.hasListener) {
+                info.listener.onProgress(info.totalBytes);
+                info.listener.onFinish(info.file);
+            }
+            DLManager.getInstance(context).addDLTask();
         }
     }
 
@@ -124,6 +139,11 @@ class DLTask implements Runnable, IDLThreadListener {
         if (!DLUtil.createFile(info.dirPath, info.fileName))
             throw new DLException("Can not create file");
         info.file = new File(info.dirPath, info.fileName);
+        if (info.file.exists() && info.file.length() == info.totalBytes) {
+            Log.d(TAG, "The file which we want to download was already here.");
+            return;
+        }
+        if (info.hasListener) info.listener.onStart(info.fileName, info.realUrl, info.totalBytes);
         switch (code) {
             case HTTP_OK:
                 dlData(conn);
@@ -161,7 +181,8 @@ class DLTask implements Runnable, IDLThreadListener {
             if (i == threadSize - 1) {
                 end = start + threadLength + remainder;
             }
-            DLThreadInfo threadInfo = new DLThreadInfo(UUID.randomUUID().toString(), start, end);
+            DLThreadInfo threadInfo =
+                    new DLThreadInfo(UUID.randomUUID().toString(), info.baseUrl, start, end);
             info.addDLThread(threadInfo);
             DLDBManager.getInstance(context).insertThreadInfo(threadInfo);
             DLManager.getInstance(context).addDLThread(new DLThread(threadInfo, info, this));

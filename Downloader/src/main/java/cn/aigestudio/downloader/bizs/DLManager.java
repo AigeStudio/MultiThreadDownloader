@@ -4,12 +4,18 @@ import android.content.Context;
 import android.text.TextUtils;
 import android.util.Log;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import cn.aigestudio.downloader.interfaces.IDListener;
 
@@ -22,9 +28,34 @@ public final class DLManager {
     private static final String TAG = DLManager.class.getSimpleName();
 
     private static final int CORES = Runtime.getRuntime().availableProcessors();
+    private static final int POOL_SIZE = CORES + 1;
+    private static final int POOL_SIZE_MAX = CORES * 2 + 1;
 
-    private static final ExecutorService POOL_TASK = Executors.newCachedThreadPool();
-    private static final ExecutorService POOL_Thread = Executors.newCachedThreadPool();
+    private static final BlockingQueue<Runnable> POOL_QUEUE_TASK = new LinkedBlockingQueue<>(56);
+    private static final BlockingQueue<Runnable> POOL_QUEUE_THREAD = new LinkedBlockingQueue<>(256);
+
+    private static final ThreadFactory TASK_FACTORY = new ThreadFactory() {
+        private final AtomicInteger COUNT = new AtomicInteger(1);
+
+        @Override
+        public Thread newThread(Runnable runnable) {
+            return new Thread(runnable, "DLTask #" + COUNT.getAndIncrement());
+        }
+    };
+
+    private static final ThreadFactory THREAD_FACTORY = new ThreadFactory() {
+        private final AtomicInteger COUNT = new AtomicInteger(1);
+
+        @Override
+        public Thread newThread(Runnable runnable) {
+            return new Thread(runnable, "DLThread #" + COUNT.getAndIncrement());
+        }
+    };
+
+    private static final ExecutorService POOL_TASK = new ThreadPoolExecutor(POOL_SIZE,
+            POOL_SIZE_MAX, 3, TimeUnit.SECONDS, POOL_QUEUE_TASK, TASK_FACTORY);
+    private static final ExecutorService POOL_Thread = new ThreadPoolExecutor(POOL_SIZE * 5,
+            POOL_SIZE_MAX * 5, 1, TimeUnit.SECONDS, POOL_QUEUE_THREAD, THREAD_FACTORY);
 
     private static final ConcurrentHashMap<String, DLInfo> TASK_DLING = new ConcurrentHashMap<>();
     private static final List<DLInfo> TASK_PREPARE = Collections.synchronizedList(new ArrayList<DLInfo>());
@@ -44,6 +75,16 @@ public final class DLManager {
         if (null == sManager) {
             sManager = new DLManager(context);
         }
+        return sManager;
+    }
+
+    public DLManager setMaxTask(int maxTask) {
+        this.maxTask = maxTask;
+        return sManager;
+    }
+
+    public DLManager setDebugEnable(boolean isDebug) {
+        DLCons.DEBUG = isDebug;
         return sManager;
     }
 
@@ -67,6 +108,10 @@ public final class DLManager {
             } else {
                 if (DEBUG) Log.d(TAG, "Resume task from database.");
                 info = DLDBManager.getInstance(context).queryTaskInfo(url);
+                if (null != info) {
+                    info.threads.clear();
+                    info.threads.addAll(DLDBManager.getInstance(context).queryAllThreadInfo(url));
+                }
             }
             if (null == info) {
                 if (DEBUG) Log.d(TAG, "New task will be start.");
@@ -107,6 +152,22 @@ public final class DLManager {
                 }
             }
         }
+    }
+
+    public void dlCancel(String url) {
+        dlStop(url);
+        DLInfo info;
+        if (TASK_DLING.containsKey(url)) {
+            info = TASK_DLING.get(url);
+        } else {
+            info = DLDBManager.getInstance(context).queryTaskInfo(url);
+        }
+        if (null != info) {
+            File file = new File(info.dirPath, info.fileName);
+            if (file.exists()) file.delete();
+        }
+        DLDBManager.getInstance(context).deleteTaskInfo(url);
+        DLDBManager.getInstance(context).deleteAllThreadInfo(url);
     }
 
     synchronized DLManager removeDLTask(String url) {

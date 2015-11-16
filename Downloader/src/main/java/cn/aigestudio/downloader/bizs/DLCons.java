@@ -71,7 +71,7 @@ final class DLCons {
         static final String TB_TASK = "task_info";
         static final String TB_TASK_URL_BASE = "base_url";
         static final String TB_TASK_URL_REAL = "real_url";
-        static final String TB_TASK_FILE_PATH = "file_path";
+        static final String TB_TASK_DIR_PATH = "file_path";
         static final String TB_TASK_CURRENT_BYTES = "currentBytes";
         static final String TB_TASK_TOTAL_BYTES = "totalBytes";
         static final String TB_TASK_FILE_NAME = "file_name";
@@ -93,7 +93,12 @@ final class DLCons {
                 BaseColumns._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 DLCons.DBCons.TB_TASK_URL_BASE + " CHAR, " +
                 DLCons.DBCons.TB_TASK_URL_REAL + " CHAR, " +
-                DLCons.DBCons.TB_TASK_FILE_PATH + " CHAR, " +
+                DLCons.DBCons.TB_TASK_DIR_PATH + " CHAR, " +
+                DLCons.DBCons.TB_TASK_FILE_NAME + " CHAR, " +
+                DLCons.DBCons.TB_TASK_MIME_TYPE + " CHAR, " +
+                DLCons.DBCons.TB_TASK_ETAG + " CHAR, " +
+                DLCons.DBCons.TB_TASK_DISPOSITION + " CHAR, " +
+                DLCons.DBCons.TB_TASK_LOCATION + " CHAR, " +
                 DLCons.DBCons.TB_TASK_CURRENT_BYTES + " INTEGER, " +
                 DLCons.DBCons.TB_TASK_TOTAL_BYTES + " INTEGER)";
         static final String TB_THREAD_SQL_CREATE = "CREATE TABLE " +

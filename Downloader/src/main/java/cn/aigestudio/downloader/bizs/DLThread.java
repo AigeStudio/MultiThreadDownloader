@@ -52,7 +52,7 @@ class DLThread implements Runnable {
             }
             if (dlThreadInfo.isStop) {
                 Log.d(TAG, "Thread " + dlThreadInfo.id + " will be stopped.");
-                listener.onStop();
+                listener.onStop(dlThreadInfo);
             } else {
                 Log.d(TAG, "Thread " + dlThreadInfo.id + " will be finished.");
                 listener.onFinish(dlThreadInfo);

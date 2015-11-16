@@ -8,6 +8,7 @@ import android.widget.Button;
 import android.widget.ProgressBar;
 
 import cn.aigestudio.downloader.bizs.DLManager;
+import cn.aigestudio.downloader.interfaces.SimpleDListener;
 
 public class MainActivity extends Activity {
     private static final String[] URLS = {
@@ -57,7 +58,7 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-//        DLManager.getInstance(MainActivity.this).setMaxTask(2);
+        DLManager.getInstance(MainActivity.this).setMaxTask(2);
         Button[] btnStarts = new Button[RES_ID_BTN_START.length];
         for (int i = 0; i < btnStarts.length; i++) {
             btnStarts[i] = (Button) findViewById(RES_ID_BTN_START[i]);
@@ -65,14 +66,18 @@ public class MainActivity extends Activity {
             btnStarts[i].setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    DLManager.getInstance(MainActivity.this).dlStart(URLS[finalI], saveDir, null, null, null);
-//                    DLManager.getInstance(MainActivity.this).dlStart(URLS[finalI], saveDir,
-//                            new SimpleDListener() {
-//                                @Override
-//                                public void onProgress(int progress) {
-//                                    pbDLs[finalI].setProgress(progress);
-//                                }
-//                            });
+                    DLManager.getInstance(MainActivity.this).dlStart(URLS[finalI], saveDir,
+                            null, null, new SimpleDListener(){
+                        @Override
+                        public void onStart(String fileName, String realUrl, int fileLength) {
+                            pbDLs[finalI].setMax(fileLength);
+                        }
+
+                        @Override
+                        public void onProgress(int progress) {
+                            pbDLs[finalI].setProgress(progress);
+                        }
+                    });
                 }
             });
         }
@@ -108,7 +113,13 @@ public class MainActivity extends Activity {
         }
 
         saveDir = Environment.getExternalStorageDirectory() + "/AigeStudio/";
+    }
 
-//        DLManager.getInstance(this).dlStart(URLS[0], saveDir, null, null, null);
+    @Override
+    protected void onDestroy() {
+        for (String url : URLS) {
+            DLManager.getInstance(this).dlStop(url);
+        }
+        super.onDestroy();
     }
 }

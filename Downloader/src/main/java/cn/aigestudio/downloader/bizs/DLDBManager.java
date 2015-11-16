@@ -24,46 +24,51 @@ final class DLDBManager implements ITaskDAO, IThreadDAO {
 
     @Override
     public synchronized void insertTaskInfo(DLInfo info) {
-
+        daoTask.insertTaskInfo(info);
     }
 
     @Override
     public synchronized void deleteTaskInfo(String url) {
-
+        daoTask.deleteTaskInfo(url);
     }
 
     @Override
     public synchronized void updateTaskInfo(DLInfo info) {
-
+        daoTask.updateTaskInfo(info);
     }
 
     @Override
     public synchronized DLInfo queryTaskInfo(String url) {
-        return null;
+        return daoTask.queryTaskInfo(url);
     }
 
     @Override
     public synchronized void insertThreadInfo(DLThreadInfo info) {
-
+        daoThread.insertThreadInfo(info);
     }
 
     @Override
-    public synchronized void deleteThreadInfo(String url) {
+    public synchronized void deleteThreadInfo(String id) {
+        daoThread.deleteThreadInfo(id);
+    }
 
+    @Override
+    public synchronized void deleteAllThreadInfo(String url) {
+        daoThread.deleteAllThreadInfo(url);
     }
 
     @Override
     public synchronized void updateThreadInfo(DLThreadInfo info) {
-
+        daoThread.updateThreadInfo(info);
     }
 
     @Override
-    public synchronized DLThread queryThreadInfo(String id) {
-        return null;
+    public synchronized DLThreadInfo queryThreadInfo(String id) {
+        return daoThread.queryThreadInfo(id);
     }
 
     @Override
-    public synchronized List<DLThread> queryAllThreadInfo(String url) {
-        return null;
+    public synchronized List<DLThreadInfo> queryAllThreadInfo(String url) {
+        return daoThread.queryAllThreadInfo(url);
     }
 }

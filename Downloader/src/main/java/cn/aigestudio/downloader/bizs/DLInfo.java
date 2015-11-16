@@ -3,7 +3,6 @@ package cn.aigestudio.downloader.bizs;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import cn.aigestudio.downloader.interfaces.IDListener;
 
@@ -19,7 +18,6 @@ class DLInfo {
     int currentBytes;
     boolean hasListener;
     boolean isResume;
-    String id;
     String fileName;
     String dirPath;
     String baseUrl;
@@ -34,7 +32,6 @@ class DLInfo {
     File file;
 
     DLInfo() {
-        id = UUID.randomUUID().toString();
         threads = new ArrayList<>();
     }
 

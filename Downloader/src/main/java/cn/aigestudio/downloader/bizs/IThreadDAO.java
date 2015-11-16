@@ -5,11 +5,13 @@ import java.util.List;
 interface IThreadDAO {
     void insertThreadInfo(DLThreadInfo info);
 
-    void deleteThreadInfo(String url);
+    void deleteThreadInfo(String id);
+
+    void deleteAllThreadInfo(String url);
 
     void updateThreadInfo(DLThreadInfo info);
 
-    DLThread queryThreadInfo(String id);
+    DLThreadInfo queryThreadInfo(String id);
 
-    List<DLThread> queryAllThreadInfo(String url);
+    List<DLThreadInfo> queryAllThreadInfo(String url);
 }
