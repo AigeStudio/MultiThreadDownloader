@@ -29,16 +29,17 @@ public class DLService extends Service {
         final NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
                 .setSmallIcon(R.drawable.ic_launcher);
 
-        DLManager.getInstance(this).dlStart(url, path, new SimpleDListener() {
+        final int[] length = new int[1];
+        DLManager.getInstance(this).dlStart(url, path, null, null, new SimpleDListener() {
             @Override
             public void onStart(String fileName, String realUrl, int fileLength) {
-                super.onStart(fileName, realUrl, fileLength);
                 builder.setContentTitle(fileName);
+                length[0] = fileLength;
             }
 
             @Override
             public void onProgress(int progress) {
-                builder.setProgress(100, progress, false);
+                builder.setProgress(length[0], progress, false);
                 nm.notify(id, builder.build());
             }
 

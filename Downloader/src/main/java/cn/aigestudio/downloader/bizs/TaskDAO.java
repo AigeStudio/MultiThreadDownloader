@@ -4,69 +4,97 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 
-import java.io.File;
+import static cn.aigestudio.downloader.bizs.DLCons.DBCons.TB_TASK;
+import static cn.aigestudio.downloader.bizs.DLCons.DBCons.TB_TASK_CURRENT_BYTES;
+import static cn.aigestudio.downloader.bizs.DLCons.DBCons.TB_TASK_DIR_PATH;
+import static cn.aigestudio.downloader.bizs.DLCons.DBCons.TB_TASK_DISPOSITION;
+import static cn.aigestudio.downloader.bizs.DLCons.DBCons.TB_TASK_ETAG;
+import static cn.aigestudio.downloader.bizs.DLCons.DBCons.TB_TASK_FILE_NAME;
+import static cn.aigestudio.downloader.bizs.DLCons.DBCons.TB_TASK_LOCATION;
+import static cn.aigestudio.downloader.bizs.DLCons.DBCons.TB_TASK_MIME_TYPE;
+import static cn.aigestudio.downloader.bizs.DLCons.DBCons.TB_TASK_TOTAL_BYTES;
+import static cn.aigestudio.downloader.bizs.DLCons.DBCons.TB_TASK_URL_BASE;
+import static cn.aigestudio.downloader.bizs.DLCons.DBCons.TB_TASK_URL_REAL;
 
-/**
- * 下载任务的DAO实现
- * DAO for download task.
- *
- * @author AigeStudio 2015-05-09
- * @author AigeStudio 2015-05-29
- *         根据域名重定向问题进行逻辑修改
- */
-class TaskDAO extends DLDAO {
+class TaskDAO implements ITaskDAO {
+    private final DLDBHelper dbHelper;
+
     TaskDAO(Context context) {
-        super(context);
+        dbHelper = new DLDBHelper(context);
     }
 
     @Override
-    void insertInfo(DLInfo info) {
-        TaskInfo i = (TaskInfo) info;
+    public void insertTaskInfo(DLInfo info) {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
-        db.execSQL("INSERT INTO " + DLCons.DBCons.TB_TASK + "(" +
-                        DLCons.DBCons.TB_TASK_URL_BASE + ", " +
-                        DLCons.DBCons.TB_TASK_URL_REAL + ", " +
-                        DLCons.DBCons.TB_TASK_FILE_PATH + ", " +
-                        DLCons.DBCons.TB_TASK_PROGRESS + ", " +
-                        DLCons.DBCons.TB_TASK_FILE_LENGTH + ") values (?,?,?,?,?)",
-                new Object[]{i.baseUrl, i.realUrl, i.dlLocalFile.getAbsolutePath(), i.progress,
-                        i.length});
+        db.execSQL("INSERT INTO " + TB_TASK + "(" +
+                        TB_TASK_URL_BASE + ", " +
+                        TB_TASK_URL_REAL + ", " +
+                        TB_TASK_DIR_PATH + ", " +
+                        TB_TASK_FILE_NAME + ", " +
+                        TB_TASK_MIME_TYPE + ", " +
+                        TB_TASK_ETAG + ", " +
+                        TB_TASK_DISPOSITION + ", " +
+                        TB_TASK_LOCATION + ", " +
+                        TB_TASK_CURRENT_BYTES + ", " +
+                        TB_TASK_TOTAL_BYTES + ") values (?,?,?,?,?,?,?,?,?,?)",
+                new Object[]{info.baseUrl, info.realUrl, info.dirPath, info.fileName,
+                        info.mimeType, info.eTag, info.disposition, info.location,
+                        info.currentBytes, info.totalBytes});
         db.close();
     }
 
     @Override
-    void deleteInfo(String url) {
+    public void deleteTaskInfo(String url) {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
-        db.execSQL("DELETE FROM " + DLCons.DBCons.TB_TASK + " WHERE " +
-                DLCons.DBCons.TB_TASK_URL_BASE + "=?", new String[]{url});
+        db.execSQL("DELETE FROM " + TB_TASK + " WHERE " + TB_TASK_URL_BASE + "=?",
+                new String[]{url});
         db.close();
     }
 
     @Override
-    void updateInfo(DLInfo info) {
-        TaskInfo i = (TaskInfo) info;
+    public void updateTaskInfo(DLInfo info) {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
-        db.execSQL("UPDATE " + DLCons.DBCons.TB_TASK + " SET " +
-                DLCons.DBCons.TB_TASK_PROGRESS + "=? WHERE " +
-                DLCons.DBCons.TB_TASK_URL_BASE + "=?", new Object[]{i.progress, i.baseUrl});
+        db.execSQL("UPDATE " + TB_TASK + " SET " +
+                TB_TASK_DISPOSITION + "=?," +
+                TB_TASK_LOCATION + "=?," +
+                TB_TASK_MIME_TYPE + "=?," +
+                TB_TASK_TOTAL_BYTES + "=?," +
+                TB_TASK_FILE_NAME + "=?," +
+                TB_TASK_CURRENT_BYTES + "=? WHERE " +
+                TB_TASK_URL_BASE + "=?", new Object[]{info.disposition, info.location,
+                info.mimeType, info.totalBytes, info.fileName, info.currentBytes, info.baseUrl});
         db.close();
     }
 
     @Override
-    DLInfo queryInfo(String url) {
-        TaskInfo info = null;
+    public DLInfo queryTaskInfo(String url) {
+        DLInfo info = null;
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         Cursor c = db.rawQuery("SELECT " +
-                DLCons.DBCons.TB_TASK_URL_BASE + ", " +
-                DLCons.DBCons.TB_TASK_URL_REAL + ", " +
-                DLCons.DBCons.TB_TASK_FILE_PATH + ", " +
-                DLCons.DBCons.TB_TASK_PROGRESS + ", " +
-                DLCons.DBCons.TB_TASK_FILE_LENGTH + " FROM " +
-                DLCons.DBCons.TB_TASK + " WHERE " +
-                DLCons.DBCons.TB_TASK_URL_BASE + "=?", new String[]{url});
+                TB_TASK_URL_BASE + ", " +
+                TB_TASK_URL_REAL + ", " +
+                TB_TASK_DIR_PATH + ", " +
+                TB_TASK_FILE_NAME + ", " +
+                TB_TASK_MIME_TYPE + ", " +
+                TB_TASK_ETAG + ", " +
+                TB_TASK_DISPOSITION + ", " +
+                TB_TASK_LOCATION + ", " +
+                TB_TASK_CURRENT_BYTES + ", " +
+                TB_TASK_TOTAL_BYTES + " FROM " +
+                TB_TASK + " WHERE " +
+                TB_TASK_URL_BASE + "=?", new String[]{url});
         if (c.moveToFirst()) {
-            info = new TaskInfo(new File(c.getString(2)), c.getString(0), c.getString(1),
-                    c.getInt(3), c.getInt(4));
+            info = new DLInfo();
+            info.baseUrl = c.getString(0);
+            info.realUrl = c.getString(1);
+            info.dirPath = c.getString(2);
+            info.fileName = c.getString(3);
+            info.mimeType = c.getString(4);
+            info.eTag = c.getString(5);
+            info.disposition = c.getString(6);
+            info.location = c.getString(7);
+            info.currentBytes = c.getInt(8);
+            info.totalBytes = c.getInt(9);
         }
         c.close();
         db.close();

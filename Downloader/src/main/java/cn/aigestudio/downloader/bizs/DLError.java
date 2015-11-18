@@ -1,6 +1,9 @@
 package cn.aigestudio.downloader.bizs;
 
 public final class DLError {
+    private DLError() {
+    }
+
     /**
      * 没有网络
      */
@@ -25,4 +28,8 @@ public final class DLError {
      * 建立连接出错
      */
     public static final int ERROR_OPEN_CONNECT = 138;
+    /**
+     * 未能处理的重定向错误
+     */
+    public static final int ERROR_UNHANDLED_REDIRECT = 333;
 }

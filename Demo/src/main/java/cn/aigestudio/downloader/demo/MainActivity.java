@@ -67,12 +67,17 @@ public class MainActivity extends Activity {
                 @Override
                 public void onClick(View v) {
                     DLManager.getInstance(MainActivity.this).dlStart(URLS[finalI], saveDir,
-                            new SimpleDListener() {
-                                @Override
-                                public void onProgress(int progress) {
-                                    pbDLs[finalI].setProgress(progress);
-                                }
-                            });
+                            null, null, new SimpleDListener(){
+                        @Override
+                        public void onStart(String fileName, String realUrl, int fileLength) {
+                            pbDLs[finalI].setMax(fileLength);
+                        }
+
+                        @Override
+                        public void onProgress(int progress) {
+                            pbDLs[finalI].setProgress(progress);
+                        }
+                    });
                 }
             });
         }
@@ -108,5 +113,13 @@ public class MainActivity extends Activity {
         }
 
         saveDir = Environment.getExternalStorageDirectory() + "/AigeStudio/";
+    }
+
+    @Override
+    protected void onDestroy() {
+        for (String url : URLS) {
+            DLManager.getInstance(this).dlStop(url);
+        }
+        super.onDestroy();
     }
 }

@@ -4,104 +4,90 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * 线程的DAO实现
- * DAO for thread.
- *
- * @author AigeStudio 2015-05-16
- * @author AigeStudio 2015-05-29
- *         根据域名重定向问题进行逻辑修改
- */
-class ThreadDAO extends DLDAO {
+import static cn.aigestudio.downloader.bizs.DLCons.DBCons.TB_THREAD;
+import static cn.aigestudio.downloader.bizs.DLCons.DBCons.TB_THREAD_END;
+import static cn.aigestudio.downloader.bizs.DLCons.DBCons.TB_THREAD_ID;
+import static cn.aigestudio.downloader.bizs.DLCons.DBCons.TB_THREAD_START;
+import static cn.aigestudio.downloader.bizs.DLCons.DBCons.TB_THREAD_URL_BASE;
+
+class ThreadDAO implements IThreadDAO {
+    private final DLDBHelper dbHelper;
+
     ThreadDAO(Context context) {
-        super(context);
+        dbHelper = new DLDBHelper(context);
     }
 
     @Override
-    void insertInfo(DLInfo info) {
-        ThreadInfo i = (ThreadInfo) info;
+    public void insertThreadInfo(DLThreadInfo info) {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
-        db.execSQL("INSERT INTO " + DLCons.DBCons.TB_THREAD + "(" +
-                        DLCons.DBCons.TB_THREAD_URL_BASE + ", " +
-                        DLCons.DBCons.TB_THREAD_URL_REAL + ", " +
-                        DLCons.DBCons.TB_THREAD_FILE_PATH + ", " +
-                        DLCons.DBCons.TB_THREAD_START + ", " +
-                        DLCons.DBCons.TB_THREAD_END + ", " +
-                        DLCons.DBCons.TB_THREAD_ID + ") VALUES (?,?,?,?,?,?)",
-                new Object[]{i.baseUrl, i.realUrl, i.dlLocalFile.getAbsolutePath(), i.start,
-                        i.end, i.id});
+        db.execSQL("INSERT INTO " + TB_THREAD + "(" +
+                        TB_THREAD_URL_BASE + ", " +
+                        TB_THREAD_START + ", " +
+                        TB_THREAD_END + ", " +
+                        TB_THREAD_ID + ") VALUES (?,?,?,?)",
+                new Object[]{info.baseUrl, info.start, info.end, info.id});
         db.close();
     }
 
     @Override
-    void deleteInfo(String id) {
+    public void deleteThreadInfo(String id) {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
-        db.execSQL("DELETE FROM " + DLCons.DBCons.TB_THREAD + " WHERE " +
-                DLCons.DBCons.TB_THREAD_ID + "=?", new String[]{id});
-        db.close();
-    }
-
-    void deleteInfos(String url) {
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        db.execSQL("DELETE FROM " + DLCons.DBCons.TB_THREAD + " WHERE " +
-                DLCons.DBCons.TB_THREAD_URL_BASE + "=?", new String[]{url});
+        db.execSQL("DELETE FROM " + TB_THREAD + " WHERE " + TB_THREAD_ID + "=?", new String[]{id});
         db.close();
     }
 
     @Override
-    void updateInfo(DLInfo info) {
-        ThreadInfo i = (ThreadInfo) info;
+    public void deleteAllThreadInfo(String url) {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
-        db.execSQL("UPDATE " + DLCons.DBCons.TB_THREAD + " SET " +
-                DLCons.DBCons.TB_THREAD_START + "=? WHERE " +
-                DLCons.DBCons.TB_THREAD_URL_BASE + "=? AND " +
-                DLCons.DBCons.TB_THREAD_ID + "=?", new Object[]{i.start, i.baseUrl, i.id});
+        db.execSQL("DELETE FROM " + TB_THREAD + " WHERE " + TB_THREAD_URL_BASE + "=?",
+                new String[]{url});
         db.close();
     }
 
     @Override
-    DLInfo queryInfo(String id) {
-        ThreadInfo info = null;
+    public void updateThreadInfo(DLThreadInfo info) {
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        db.execSQL("UPDATE " + TB_THREAD + " SET " +
+                TB_THREAD_START + "=? WHERE " +
+                TB_THREAD_URL_BASE + "=? AND " +
+                TB_THREAD_ID + "=?", new Object[]{info.start, info.baseUrl, info.id});
+        db.close();
+    }
+
+    @Override
+    public DLThreadInfo queryThreadInfo(String id) {
+        DLThreadInfo info = null;
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         Cursor c = db.rawQuery("SELECT " +
-                DLCons.DBCons.TB_THREAD_URL_BASE + ", " +
-                DLCons.DBCons.TB_THREAD_URL_REAL + ", " +
-                DLCons.DBCons.TB_THREAD_FILE_PATH + ", " +
-                DLCons.DBCons.TB_THREAD_START + ", " +
-                DLCons.DBCons.TB_THREAD_END + " FROM " +
-                DLCons.DBCons.TB_THREAD + " WHERE " +
-                DLCons.DBCons.TB_THREAD_ID + "=?", new String[]{id});
-        if (c.moveToFirst()) {
-            info = new ThreadInfo(new File(c.getString(2)), c.getString(0), c.getString(1),
-                    c.getInt(3), c.getInt(4), id);
-        }
+                TB_THREAD_URL_BASE + ", " +
+                TB_THREAD_START + ", " +
+                TB_THREAD_END + " FROM " +
+                TB_THREAD + " WHERE " +
+                TB_THREAD_ID + "=?", new String[]{id});
+        if (c.moveToFirst()) info = new DLThreadInfo(id, c.getString(0), c.getInt(1), c.getInt(2));
         c.close();
         db.close();
         return info;
     }
 
-    List<ThreadInfo> queryInfos(String url) {
-        List<ThreadInfo> infos = new ArrayList<>();
+    @Override
+    public List<DLThreadInfo> queryAllThreadInfo(String url) {
+        List<DLThreadInfo> info = new ArrayList<>();
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         Cursor c = db.rawQuery("SELECT " +
-                DLCons.DBCons.TB_THREAD_URL_BASE + ", " +
-                DLCons.DBCons.TB_THREAD_URL_REAL + ", " +
-                DLCons.DBCons.TB_THREAD_FILE_PATH + ", " +
-                DLCons.DBCons.TB_THREAD_START + ", " +
-                DLCons.DBCons.TB_THREAD_END + ", " +
-                DLCons.DBCons.TB_THREAD_ID + " FROM " +
-                DLCons.DBCons.TB_THREAD + " WHERE " +
-                DLCons.DBCons.TB_THREAD_URL_BASE + "=?", new String[]{url});
-        while (c.moveToNext()) {
-            infos.add(new ThreadInfo(new File(c.getString(2)), c.getString(0), c.getString(1),
-                    c.getInt(3), c.getInt(4), c.getString(5)));
-        }
+                TB_THREAD_URL_BASE + ", " +
+                TB_THREAD_START + ", " +
+                TB_THREAD_END + ", " +
+                TB_THREAD_ID + " FROM " +
+                TB_THREAD + " WHERE " +
+                TB_THREAD_URL_BASE + "=?", new String[]{url});
+        while (c.moveToNext())
+            info.add(new DLThreadInfo(c.getString(3), c.getString(0), c.getInt(1), c.getInt(2)));
         c.close();
         db.close();
-        return infos;
+        return info;
     }
 }

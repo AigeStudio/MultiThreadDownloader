@@ -4,14 +4,95 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
+import android.os.Build;
+import android.text.TextUtils;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 final class DLUtil {
+    public static final String DEFAULT_USER_AGENT;
+
+    static {
+        final StringBuilder builder = new StringBuilder();
+
+        final boolean validRelease = !TextUtils.isEmpty(Build.VERSION.RELEASE);
+        final boolean validId = !TextUtils.isEmpty(Build.ID);
+        final boolean includeModel = "REL".equals(Build.VERSION.CODENAME)
+                && !TextUtils.isEmpty(Build.MODEL);
+
+        builder.append("MultiThreadDownloader");
+        if (validRelease) {
+            builder.append("/").append(Build.VERSION.RELEASE);
+        }
+        builder.append(" (Linux; U; Android");
+        if (validRelease) {
+            builder.append(" ").append(Build.VERSION.RELEASE);
+        }
+        if (includeModel || validId) {
+            builder.append(";");
+            if (includeModel) {
+                builder.append(" ").append(Build.MODEL);
+            }
+            if (validId) {
+                builder.append(" Build/").append(Build.ID);
+            }
+        }
+        builder.append(")");
+
+        DEFAULT_USER_AGENT = builder.toString();
+    }
+
+    private DLUtil() {
+    }
+
+    static String normalizeMimeType(String type) {
+        if (type == null) {
+            return null;
+        }
+        type = type.trim().toLowerCase();
+        final int semicolonIndex = type.indexOf(';');
+        if (semicolonIndex != -1) {
+            type = type.substring(0, semicolonIndex);
+        }
+        return type;
+    }
+
+    static List<DLHeader> initRequestHeaders(List<DLHeader> headers, DLInfo info) {
+        if (null == headers || headers.isEmpty()) {
+            headers = new ArrayList<>();
+            headers.add(new DLHeader("Accept", "image/gif, image/jpeg, image/pjpeg, image/pjpeg," +
+                    "application/x-shockwave-flash, application/xaml+xml," +
+                    "application/vnd.ms-xpsdocument, application/x-ms-xbap," +
+                    "application/x-ms-application, application/vnd.ms-excel," +
+                    "application/vnd.ms-powerpoint, application/msword, */*"));
+            headers.add(new DLHeader("Accept-Ranges", "bytes"));
+            headers.add(new DLHeader("Charset", "UTF-8"));
+            headers.add(new DLHeader("Connection", "Keep-Alive"));
+            headers.add(new DLHeader("Accept-Encoding", "identity"));
+            headers.add(new DLHeader("Range", "bytes=" + 0 + "-"));
+        }
+        if (!hasRequestHeader("User-Agent", headers)) {
+            headers.add(new DLHeader("User-Agent", DEFAULT_USER_AGENT));
+        }
+        if (!TextUtils.isEmpty(info.eTag)) {
+            headers.add(new DLHeader("If-Match", info.eTag));
+        }
+        return headers;
+    }
+
+    private static boolean hasRequestHeader(String key, List<DLHeader> headers) {
+        for (DLHeader header : headers) {
+            if (header.key.equalsIgnoreCase(key)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     static String obtainFileName(String url, String contentDisposition, String contentLocation) {
         String fileName = null;
         if (null != contentDisposition) {
@@ -25,7 +106,8 @@ final class DLUtil {
         }
         if (fileName == null && contentLocation != null) {
             String decodedContentLocation = Uri.decode(contentLocation);
-            if (decodedContentLocation != null && !decodedContentLocation.endsWith("/") && decodedContentLocation.indexOf('?') < 0) {
+            if (decodedContentLocation != null && !decodedContentLocation.endsWith("/")
+                    && decodedContentLocation.indexOf('?') < 0) {
                 int index = decodedContentLocation.lastIndexOf('/') + 1;
                 if (index > 0) {
                     fileName = decodedContentLocation.substring(index);
@@ -92,30 +174,6 @@ final class DLUtil {
         return sb.toString();
     }
 
-    static HttpURLConnection buildConnection(String url) throws IOException {
-        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
-        connection.setRequestMethod(HttpConnPars.POST.content);
-        connection.setConnectTimeout(Integer.parseInt(HttpConnPars.CONNECT_TIMEOUT.content));
-        connection.setRequestProperty(HttpConnPars.ACCEPT.header, HttpConnPars.ACCEPT.content);
-        connection.setRequestProperty(HttpConnPars.ACCEPT_RANGE.header, HttpConnPars.ACCEPT_RANGE.content);
-        connection.setRequestProperty(HttpConnPars.ACCEPT_LANGUAGE.header, HttpConnPars.ACCEPT_LANGUAGE.content);
-        connection.setRequestProperty(HttpConnPars.CHARSET.header, HttpConnPars.CHARSET.content);
-        connection.setRequestProperty(HttpConnPars.KEEP_CONNECT.header, HttpConnPars.KEEP_CONNECT.content);
-        return connection;
-    }
-
-    static boolean isNetworkAvailable(Context context) {
-        try {
-            ConnectivityManager cm =
-                    (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-            NetworkInfo info = cm.getActiveNetworkInfo();
-            return null != info && info.isConnected();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
     static synchronized boolean createFile(String path, String fileName) {
         boolean hasFile = false;
         try {
@@ -129,5 +187,17 @@ final class DLUtil {
             e.printStackTrace();
         }
         return hasFile;
+    }
+
+    static boolean isNetworkAvailable(Context context) {
+        try {
+            ConnectivityManager cm =
+                    (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            NetworkInfo info = cm.getActiveNetworkInfo();
+            return null != info && info.isConnected();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 }
