@@ -70,6 +70,13 @@ class DLTask implements Runnable, IDLThreadListener {
 
     @Override
     public synchronized void onFinish(DLThreadInfo threadInfo) {
+        if (null == threadInfo) {
+            if (info.hasListener) {
+                info.listener.onProgress(info.totalBytes);
+                info.listener.onFinish(info.file);
+            }
+            return;
+        }
         info.removeDLThread(threadInfo);
         DLDBManager.getInstance(context).deleteThreadInfo(threadInfo.id);
         Log.d(TAG, "Thread size " + info.threads.size());
@@ -194,12 +201,11 @@ class DLTask implements Runnable, IDLThreadListener {
         FileOutputStream fos = new FileOutputStream(info.file);
         byte[] b = new byte[4096];
         int len;
-        int count = 0;
         while ((len = is.read(b)) != -1) {
-            count += len;
-            Log.d(TAG, count + "");
             fos.write(b, 0, len);
+            onProgress(len);
         }
+        onFinish(null);
         fos.close();
         is.close();
     }
