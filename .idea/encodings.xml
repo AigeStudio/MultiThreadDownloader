@@ -41,5 +41,6 @@
     <file url="file://$PROJECT_DIR$/Downloader/src/main/java/cn/aigestudio/downloader/interfaces/DLTaskListener.java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/Downloader/src/main/java/cn/aigestudio/downloader/interfaces/IDListener.java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/Downloader/src/main/java/cn/aigestudio/downloader/interfaces/SimpleDListener.java" charset="UTF-8" />
+    <file url="PROJECT" charset="UTF-8" />
   </component>
 </project>
