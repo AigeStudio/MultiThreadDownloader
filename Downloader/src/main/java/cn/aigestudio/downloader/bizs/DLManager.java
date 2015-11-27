@@ -120,7 +120,7 @@ public final class DLManager {
         this.context = context;
     }
 
-    public static DLManager getInstance(Context context) {
+    public static synchronized DLManager getInstance(Context context) {
         if (null == sManager) {
             sManager = new DLManager(context);
         }
