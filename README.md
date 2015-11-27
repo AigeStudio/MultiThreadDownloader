@@ -29,6 +29,11 @@ For more help please read [wiki](https://github.com/AigeStudio/MultiThreadDownlo
 * Optimized code to enhancing the efficient implementation.
 * Optimized thread dispatch.
 
+### 1.4.2 release
+* Add method getDLInfo(String url) to get the download info at the time.
+* Add method getDLDBManager() to get the datebase manager.
+* BugFix:Can not save progress when exception happened.
+
 ## Preview
 **Download in activity**
 
