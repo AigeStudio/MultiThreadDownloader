@@ -69,6 +69,9 @@ import static cn.aigestudio.downloader.bizs.DLError.ERROR_REPEAT_URL;
  *         修复下载无法取消问题
  *         优化线程分配
  *         优化下载逻辑提升执行效率
+ * @author AigeStudio 2015-11-27
+ *         新增{@link #getDLInfo(String)}方法获取瞬时下载信息
+ *         新增{@link #getDLDBManager()}方法获取数据库管理对象
  */
 public final class DLManager {
     private static final String TAG = DLManager.class.getSimpleName();
@@ -288,6 +291,15 @@ public final class DLManager {
         }
         DLDBManager.getInstance(context).deleteTaskInfo(url);
         DLDBManager.getInstance(context).deleteAllThreadInfo(url);
+    }
+
+    public DLInfo getDLInfo(String url) {
+        return DLDBManager.getInstance(context).queryTaskInfo(url);
+    }
+
+    @Deprecated
+    public DLDBManager getDLDBManager() {
+        return DLDBManager.getInstance(context);
     }
 
     synchronized DLManager removeDLTask(String url) {

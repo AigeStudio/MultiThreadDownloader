@@ -1,15 +1,16 @@
 apply plugin: 'com.android.library'
 
-version = "1.4.1"
+version = "1.4.2"
 
 android {
     compileSdkVersion 23
     buildToolsVersion "23.0.1"
+    resourcePrefix "aigestudio_downloader"
 
     defaultConfig {
         minSdkVersion 1
         targetSdkVersion 23
-        versionCode 5
+        versionCode 8
         versionName version
     }
     buildTypes {

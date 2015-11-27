@@ -12,16 +12,17 @@ import cn.aigestudio.downloader.interfaces.IDListener;
  *
  * @author AigeStudio 2015-05-16
  */
-class DLInfo {
+public class DLInfo {
+    public int totalBytes;
+    public int currentBytes;
+    public String fileName;
+    public String dirPath;
+    public String baseUrl;
+    public String realUrl;
+
     int redirect;
-    int totalBytes;
-    int currentBytes;
     boolean hasListener;
     boolean isResume;
-    String fileName;
-    String dirPath;
-    String baseUrl;
-    String realUrl;
     String mimeType;
     String eTag;
     String disposition;

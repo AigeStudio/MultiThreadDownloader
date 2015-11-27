@@ -58,6 +58,7 @@ class DLThread implements Runnable {
                 listener.onFinish(dlThreadInfo);
             }
         } catch (IOException e) {
+            listener.onStop(dlThreadInfo);
             e.printStackTrace();
         } finally {
             try {
