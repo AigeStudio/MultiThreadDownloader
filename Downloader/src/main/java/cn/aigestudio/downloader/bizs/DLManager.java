@@ -72,6 +72,9 @@ import static cn.aigestudio.downloader.bizs.DLError.ERROR_REPEAT_URL;
  * @author AigeStudio 2015-11-27
  *         新增{@link #getDLInfo(String)}方法获取瞬时下载信息
  *         新增{@link #getDLDBManager()}方法获取数据库管理对象
+ * @author AigeStudio 2015-12-16
+ *         修复非断点下载情况下无法暂停问题
+ *         修复非断点下载情况下载完成后无法获得文件的问题
  */
 public final class DLManager {
     private static final String TAG = DLManager.class.getSimpleName();
@@ -107,7 +110,8 @@ public final class DLManager {
             POOL_SIZE_MAX * 5, 1, TimeUnit.SECONDS, POOL_QUEUE_THREAD, THREAD_FACTORY);
 
     private static final ConcurrentHashMap<String, DLInfo> TASK_DLING = new ConcurrentHashMap<>();
-    private static final List<DLInfo> TASK_PREPARE = Collections.synchronizedList(new ArrayList<DLInfo>());
+    private static final List<DLInfo> TASK_PREPARE =
+            Collections.synchronizedList(new ArrayList<DLInfo>());
     private static final ConcurrentHashMap<String, DLInfo> TASK_STOPPED = new ConcurrentHashMap<>();
 
     private static DLManager sManager;
@@ -262,6 +266,7 @@ public final class DLManager {
     public void dlStop(String url) {
         if (TASK_DLING.containsKey(url)) {
             DLInfo info = TASK_DLING.get(url);
+            info.isStop = true;
             if (!info.threads.isEmpty()) {
                 for (DLThreadInfo threadInfo : info.threads) {
                     threadInfo.isStop = true;

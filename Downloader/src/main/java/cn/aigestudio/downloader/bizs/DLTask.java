@@ -56,6 +56,15 @@ class DLTask implements Runnable, IDLThreadListener {
 
     @Override
     public synchronized void onStop(DLThreadInfo threadInfo) {
+        if (null == threadInfo) {
+            DLManager.getInstance(context).removeDLTask(info.baseUrl);
+            DLDBManager.getInstance(context).deleteTaskInfo(info.baseUrl);
+            if (info.hasListener) {
+                info.listener.onProgress(info.totalBytes);
+                info.listener.onStop(info.totalBytes);
+            }
+            return;
+        }
         DLDBManager.getInstance(context).updateThreadInfo(threadInfo);
         count++;
         if (count >= info.threads.size()) {
@@ -71,6 +80,8 @@ class DLTask implements Runnable, IDLThreadListener {
     @Override
     public synchronized void onFinish(DLThreadInfo threadInfo) {
         if (null == threadInfo) {
+            DLManager.getInstance(context).removeDLTask(info.baseUrl);
+            DLDBManager.getInstance(context).deleteTaskInfo(info.baseUrl);
             if (info.hasListener) {
                 info.listener.onProgress(info.totalBytes);
                 info.listener.onFinish(info.file);
@@ -106,6 +117,7 @@ class DLTask implements Runnable, IDLThreadListener {
                 addRequestHeaders(conn);
 
                 final int code = conn.getResponseCode();
+                Log.d("AigeStudio", code+"");
                 switch (code) {
                     case HTTP_OK:
                     case HTTP_PARTIAL:
@@ -201,11 +213,15 @@ class DLTask implements Runnable, IDLThreadListener {
         FileOutputStream fos = new FileOutputStream(info.file);
         byte[] b = new byte[4096];
         int len;
-        while ((len = is.read(b)) != -1) {
+        while (!info.isStop && (len = is.read(b)) != -1) {
             fos.write(b, 0, len);
             onProgress(len);
         }
-        onFinish(null);
+        if (!info.isStop) {
+            onFinish(null);
+        } else {
+            onStop(null);
+        }
         fos.close();
         is.close();
     }

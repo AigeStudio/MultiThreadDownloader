@@ -23,6 +23,7 @@ public class DLInfo {
     int redirect;
     boolean hasListener;
     boolean isResume;
+    boolean isStop;
     String mimeType;
     String eTag;
     String disposition;

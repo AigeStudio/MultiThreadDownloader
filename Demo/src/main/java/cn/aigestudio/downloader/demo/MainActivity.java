@@ -12,7 +12,8 @@ import cn.aigestudio.downloader.interfaces.SimpleDListener;
 
 public class MainActivity extends Activity {
     private static final String[] URLS = {
-            "http://china35.newhua.com/down/FetionNew2015September.zip",
+//            "http://china35.newhua.com/down/FetionNew2015September.zip",
+            "https://cx-ep.xiaojukeji.com/pkg//download/passenger/taxi/newhome/android/output/passenger_android_build_release/351/DiDi_passenger_taxi_newhome_build_351.apk?_t=hl6KNbYOuMLom9tRRV0U43DSMpjwXAXmhorB84U6ajlmmRigEsXBr9qEAjOeMJIVAajJAqwhrLMdpJaffBj4o6kgvZ/A3iUTlgkYq4RPdhzDWNJ1tIbHlqdeC9PEu5ISYCMfa%2BiRPyPJQ3c0qcLuhcNbmXtYp3v%2BvIn3vIWFNSM= ",
             "http://www.pc6.com/down.asp?id=72873",
             "http://download.chinaunix.net/down.php?id=10608&ResourceID=5267&site=1",
             "http://down.tech.sina.com.cn/download/d_load.php?d_id=49535&down_id=1&ip=42.81.45.159",

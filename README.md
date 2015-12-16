@@ -34,6 +34,10 @@ For more help please read [wiki](https://github.com/AigeStudio/MultiThreadDownlo
 * Add method getDLDBManager() to get the datebase manager.
 * BugFix:Can not save progress when exception happened.
 
+### 1.4.3 release
+* BugFix:Can not stop in non multi-thread download.
+* BugFix:Can not report result back in non multi-thread download.
+
 ## Preview
 **Download in activity**
 
