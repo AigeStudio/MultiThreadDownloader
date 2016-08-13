@@ -198,7 +198,7 @@ class DLTask implements Runnable, IDLThreadListener {
             int start = i * threadLength;
             int end = start + threadLength - 1;
             if (i == threadSize - 1) {
-                end = start + threadLength + remainder;
+                end = start + threadLength + remainder - 1;
             }
             DLThreadInfo threadInfo =
                     new DLThreadInfo(UUID.randomUUID().toString(), info.baseUrl, start, end);
